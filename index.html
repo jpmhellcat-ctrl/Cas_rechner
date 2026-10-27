@@ -1,0 +1,3081 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TI-Nspire™ CX CAS Simulator – Pro Suite</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Math.js & Algebrite CAS Kernel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/algebrite/1.4.0/algebrite.bundle.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .cas-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Original TI-Nspire App Icons (7 Icons at Bottom of Home Screen) */
+        .ti-app-icon {
+            width: 58px;
+            height: 58px;
+            border-radius: 12px;
+            border: 2.5px solid #ffffff;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45), inset 0 2px 4px rgba(255, 255, 255, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+        }
+        .ti-app-icon:hover {
+            transform: translateY(-5px) scale(1.07);
+            box-shadow: 0 12px 20px rgba(59, 130, 246, 0.5), inset 0 2px 6px rgba(255, 255, 255, 0.65);
+        }
+        .ti-app-icon:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .icon-calc { background: linear-gradient(145deg, #9ca3af 0%, #4b5563 100%); }
+        .icon-graph { background: linear-gradient(145deg, #38bdf8 0%, #0284c7 100%); }
+        .icon-geom { background: linear-gradient(145deg, #3b82f6 0%, #1d4ed8 100%); }
+        .icon-list { background: linear-gradient(145deg, #2dd4bf 0%, #0d9488 100%); }
+        .icon-stat { background: linear-gradient(145deg, #f472b6 0%, #db2777 100%); }
+        .icon-notes { background: linear-gradient(145deg, #facc15 0%, #ca8a04 100%); }
+        .icon-quest { background: linear-gradient(145deg, #4ade80 0%, #16a34a 100%); }
+
+        /* Handheld Keypad Buttons */
+        .hw-btn {
+            background: linear-gradient(180deg, #374151 0%, #1f2937 100%);
+            border: 1px solid #4b5563;
+            border-bottom: 3px solid #111827;
+            color: #f3f4f6;
+            border-radius: 7px;
+            font-weight: 600;
+            transition: all 0.06s ease;
+            user-select: none;
+        }
+        .hw-btn:hover {
+            background: linear-gradient(180deg, #4b5563 0%, #374151 100%);
+        }
+        .hw-btn:active {
+            transform: translateY(2px);
+            border-bottom-width: 1px;
+        }
+        .hw-btn-num {
+            background: linear-gradient(180deg, #e5e7eb 0%, #d1d5db 100%);
+            color: #111827;
+            border: 1px solid #9ca3af;
+            border-bottom: 3px solid #6b7280;
+            font-weight: 700;
+        }
+        .hw-btn-num:hover {
+            background: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%);
+        }
+        .hw-btn-blue {
+            background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+            border-color: #3b82f6;
+            border-bottom: 3px solid #1e3a8a;
+            color: white;
+        }
+        .hw-btn-enter {
+            background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+            border-color: #34d399;
+            border-bottom: 3px solid #065f46;
+            color: white;
+        }
+
+        /* Math Box in Notes Application */
+        .math-box {
+            border: 2px dashed #dc2626;
+            background-color: #fffbeb;
+            border-radius: 8px;
+            transition: all 0.15s ease;
+        }
+        .math-box:focus-within {
+            border-style: solid;
+            border-color: #2563eb;
+            background-color: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100 select-none">
+
+    <!-- TOP HEADER: Title, Global CAS Variable Monitor & Keypad Toggle -->
+    <header class="bg-slate-900 border-b border-slate-800 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 shadow-md">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 text-white font-extrabold px-2.5 py-1 rounded text-xs tracking-wider flex items-center gap-1.5 shadow">
+                <i class="fa-solid fa-calculator"></i> TI-Nspire™ CX II
+            </div>
+            <span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded text-xs font-bold tracking-wide">
+                CAS PRO SUITE
+            </span>
+            <span class="hidden md:inline text-xs text-slate-400">
+                Verbundenes Algebra-System (Calculator • Notes • Graphs • Tabelle)
+            </span>
+        </div>
+
+        <!-- Global Variables Pill & Actions -->
+        <div class="flex items-center space-x-2">
+            <div id="save-status-badge" class="bg-emerald-950/90 border border-emerald-700/70 text-emerald-300 px-2.5 py-1 rounded-lg text-xs flex items-center gap-1.5 shadow-sm" title="Alle Berechnungen, Funktionen und Notizen werden automatisch im Browser gespeichert">
+                <i class="fa-solid fa-floppy-disk text-emerald-400"></i>
+                <span id="save-status-text" class="hidden sm:inline font-semibold">Auto-Save aktiv</span>
+            </div>
+
+            <div id="global-vars-badge" onclick="toggleVarModal()" class="cursor-pointer bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1 rounded-lg text-xs flex items-center space-x-2 transition">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-slate-300 font-medium">CAS-Speicher:</span>
+                <span id="var-count-label" class="cas-mono text-blue-400 font-bold">f1(x), a, b</span>
+            </div>
+
+            <button onclick="openExamTrainerModal()" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-graduation-cap"></i> Prüfungs-Spickzettel
+            </button>
+
+            <button onclick="toggleKeypad()" id="keypad-toggle-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-keyboard"></i> <span class="hidden sm:inline">TI-Tastatur</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE: Left/Center = TI-Nspire Screen, Right = Collapsible Handheld Keypad -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden max-w-[1600px] w-full mx-auto p-2 sm:p-4 gap-4">
+
+        <!-- TI-NSPIRE DISPLAY UNIT -->
+        <div class="flex-1 flex flex-col bg-slate-900 rounded-2xl border-2 border-slate-700 shadow-2xl overflow-hidden min-h-[600px]">
+
+            <!-- TI-NSPIRE SYSTEM BAR & DOCUMENT TABS -->
+            <div class="bg-gradient-to-r from-slate-800 via-slate-800 to-slate-900 border-b border-slate-700 px-3 pt-2 flex items-center justify-between flex-wrap gap-2">
+                <!-- Document Tabs -->
+                <div class="flex items-center space-x-1 overflow-x-auto pb-1">
+                    <button onclick="switchTab('home')" id="tab-home" class="px-3 py-1.5 rounded-t-lg text-xs font-bold flex items-center gap-1.5 transition bg-slate-950 text-white border-t-2 border-blue-500">
+                        <i class="fa-solid fa-house text-blue-400"></i> Home
+                    </button>
+                    <button onclick="switchTab('calc')" id="tab-calc" class="px-3 py-1.5 rounded-t-lg text-xs font-bold flex items-center gap-1.5 transition bg-slate-700/60 hover:bg-slate-700 text-slate-300">
+                        <span class="w-4 h-4 rounded bg-slate-500 text-white flex items-center justify-center text-[10px] font-mono">±</span>
+                        1.1 Calculator
+                    </button>
+                    <button onclick="switchTab('notes')" id="tab-notes" class="px-3 py-1.5 rounded-t-lg text-xs font-bold flex items-center gap-1.5 transition bg-slate-700/60 hover:bg-slate-700 text-slate-300 relative">
+                        <span class="w-4 h-4 rounded bg-yellow-500 text-slate-950 flex items-center justify-center text-[10px]"><i class="fa-solid fa-file-lines"></i></span>
+                        1.2 Notes
+                        <span class="bg-red-500 text-white text-[9px] px-1.5 py-0.2 rounded-full font-extrabold animate-pulse">CAS</span>
+                    </button>
+                    <button onclick="switchTab('graphs')" id="tab-graphs" class="px-3 py-1.5 rounded-t-lg text-xs font-bold flex items-center gap-1.5 transition bg-slate-700/60 hover:bg-slate-700 text-slate-300">
+                        <span class="w-4 h-4 rounded bg-sky-500 text-white flex items-center justify-center text-[10px]"><i class="fa-solid fa-bezier-curve"></i></span>
+                        1.3 Graphs
+                    </button>
+                    <button onclick="switchTab('lists')" id="tab-lists" class="px-3 py-1.5 rounded-t-lg text-xs font-bold flex items-center gap-1.5 transition bg-slate-700/60 hover:bg-slate-700 text-slate-300">
+                        <span class="w-4 h-4 rounded bg-teal-500 text-white flex items-center justify-center text-[10px]"><i class="fa-solid fa-table"></i></span>
+                        1.4 Tabelle
+                    </button>
+                </div>
+
+                <!-- Right Status Indicators (CAS, Angle Mode, Battery) -->
+                <div class="flex items-center space-x-3 pb-1.5 text-xs">
+                    <span class="text-slate-400 hidden sm:inline">*Pruefung_Binome.tns</span>
+                    <button onclick="toggleAngleMode()" id="angle-mode-btn" class="bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-[11px] font-mono font-bold text-sky-300 border border-slate-600" title="Winkelmass umschalten">
+                        DEG
+                    </button>
+                    <span class="bg-blue-900/80 text-blue-200 border border-blue-700 px-2 py-0.5 rounded text-[11px] font-mono font-bold">
+                        CAS EXACT
+                    </span>
+                    <div class="flex items-center text-emerald-400 font-bold gap-1">
+                        <i class="fa-solid fa-battery-full text-base"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================================================================== -->
+            <!-- VIEW 0: ORIGINAL TI-NSPIRE HOME SCREEN (EXACT MATCH TO USER SLIDE)  -->
+            <!-- =================================================================== -->
+            <div id="view-home" class="flex-1 bg-black text-white flex flex-col justify-between p-5 sm:p-8 relative overflow-y-auto">
+                <!-- Top CAS Header Bar inside Home Screen -->
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <div class="bg-slate-800 p-1.5 rounded border border-slate-600">
+                            <i class="fa-solid fa-house text-slate-200 text-sm"></i>
+                        </div>
+                        <span class="text-xs text-slate-400">TI-Nspire™ CX CAS Startbildschirm</span>
+                    </div>
+                    <div class="text-lg font-extrabold tracking-widest text-white">CAS</div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs text-emerald-400 font-mono">100%</span>
+                        <i class="fa-solid fa-battery-full text-emerald-400 text-lg"></i>
+                    </div>
+                </div>
+
+                <!-- Center 2 Columns: Scratchpad (Left) & Documents (Right) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 my-auto py-6 max-w-3xl mx-auto w-full">
+                    <!-- Left Column: Scratchpad -->
+                    <div class="space-y-3">
+                        <div class="flex items-center space-x-2 text-sky-400 font-bold text-base tracking-wide mb-4">
+                            <i class="fa-solid fa-calculator text-sm"></i>
+                            <span>Scratchpad</span>
+                        </div>
+                        <button onclick="switchTab('calc')" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-sky-600/30 border border-transparent hover:border-sky-500 transition text-left group">
+                            <span class="bg-slate-700 group-hover:bg-sky-500 text-white font-mono font-bold text-xs px-2 py-0.5 rounded">A</span>
+                            <span class="text-slate-100 font-medium text-base">Calculate (Schnellrechner)</span>
+                        </button>
+                        <button onclick="switchTab('graphs')" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-sky-600/30 border border-transparent hover:border-sky-500 transition text-left group">
+                            <span class="bg-slate-700 group-hover:bg-sky-500 text-white font-mono font-bold text-xs px-2 py-0.5 rounded">B</span>
+                            <span class="text-slate-100 font-medium text-base">Graph (Schnellgraph)</span>
+                        </button>
+
+                        <!-- Info Callout matching the user's slide -->
+                        <div class="mt-6 bg-slate-900/90 border border-amber-500/50 rounded-xl p-3.5 text-xs text-slate-300 space-y-1.5 shadow-lg">
+                            <div class="text-amber-400 font-bold flex items-center gap-1.5">
+                                <i class="fa-solid fa-circle-info"></i> Einsatz CAS-Rechner TI-Nspire:
+                            </div>
+                            <p class="leading-relaxed">
+                                Alle Applikationen unten sind <strong>durch das CAS miteinander verbunden</strong>. Variablen oder Funktionen (z.B. <code class="text-sky-300">f1(x) := (x-2)^2 - 1</code>), die du in <strong>Notes</strong> oder <strong>Calculator</strong> definierst, sind sofort in <strong>Graphs</strong> und der <strong>Tabelle</strong> verfügbar!
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Documents -->
+                    <div class="space-y-2.5">
+                        <div class="flex items-center space-x-2 text-sky-400 font-bold text-base tracking-wide mb-4">
+                            <i class="fa-solid fa-folder-open text-sm"></i>
+                            <span>Documents</span>
+                        </div>
+                        <button onclick="switchTab('notes')" class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-sky-600 text-white font-semibold text-base shadow transition">
+                            <div class="flex items-center space-x-3">
+                                <span class="bg-slate-900/60 text-white font-mono font-bold text-xs px-2 py-0.5 rounded">1</span>
+                                <span>New Document (Prüfungs-Vorlage)</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
+                        <button onclick="openExamTrainerModal()" class="w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition text-left">
+                            <span class="bg-slate-700 text-white font-mono font-bold text-xs px-2 py-0.5 rounded">2</span>
+                            <span class="text-slate-200 text-base">My Documents (Binomische Formeln)</span>
+                        </button>
+                        <button onclick="switchTab('calc')" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 transition text-left">
+                            <div class="flex items-center space-x-3">
+                                <span class="bg-slate-700 text-white font-mono font-bold text-xs px-2 py-0.5 rounded">3</span>
+                                <span class="text-slate-300 text-base">Recent</span>
+                            </div>
+                            <i class="fa-solid fa-caret-right text-slate-400"></i>
+                        </button>
+                        <button onclick="switchTab('calc')" class="w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition text-left">
+                            <span class="bg-slate-700 text-white font-mono font-bold text-xs px-2 py-0.5 rounded">4</span>
+                            <span class="text-slate-200 text-base">Current (*Pruefung_Binome.tns)</span>
+                        </button>
+                        <button onclick="toggleVarModal()" class="w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-800 transition text-left">
+                            <span class="bg-slate-700 text-white font-mono font-bold text-xs px-2 py-0.5 rounded">5</span>
+                            <span class="text-slate-200 text-base">Settings & CAS-Speicher</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: The 7 Classic TI-Nspire Application Icons -->
+                <div class="pt-4 border-t border-slate-800">
+                    <div class="text-center text-xs text-amber-400 font-semibold mb-3 flex items-center justify-center gap-2">
+                        <span>👇 Klicke auf eine Applikation zum Starten (Tipp: Gelbes Icon <strong>„Notes“</strong> für interaktive Notizen & Rechnungen!)</span>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-5 pb-2">
+                        <!-- 1. Calculator -->
+                        <div onclick="switchTab('calc')" class="flex flex-col items-center group cursor-pointer">
+                            <div class="ti-app-icon icon-calc">
+                                <div class="grid grid-cols-2 gap-x-1.5 gap-y-0.5 text-white font-mono font-extrabold text-sm leading-none">
+                                    <span>×</span><span>÷</span>
+                                    <span>+</span><span>−</span>
+                                </div>
+                            </div>
+                            <span class="text-[11px] text-slate-300 mt-1.5 font-medium group-hover:text-white">Calculator</span>
+                        </div>
+
+                        <!-- 2. Graphs -->
+                        <div onclick="switchTab('graphs')" class="flex flex-col items-center group cursor-pointer">
+                            <div class="ti-app-icon icon-graph">
+                                <svg class="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <line x1="12" y1="2" x2="12" y2="22" stroke-opacity="0.4" stroke-width="1.5"/>
+                                    <line x1="2" y1="14" x2="22" y2="14" stroke-opacity="0.4" stroke-width="1.5"/>
+                                    <path d="M4 5 Q12 24 20 5" stroke="#ffffff" stroke-width="2.8" fill="none"/>
+                                </svg>
+                            </div>
+                            <span class="text-[11px] text-slate-300 mt-1.5 font-medium group-hover:text-white">Graphs</span>
+                        </div>
+
+                        <!-- 3. Geometry -->
+                        <div onclick="openGeometryHelper()" class="flex flex-col items-center group cursor-pointer">
+                            <div class="ti-app-icon icon-geom">
+                                <svg class="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                    <polygon points="4,19 20,19 4,5" fill="rgba(255,255,255,0.15)"/>
+                                    <rect x="4" y="15" width="4" height="4" stroke-width="1.5"/>
+                                </svg>
+                            </div>
+                            <span class="text-[11px] text-slate-300 mt-1.5 font-medium group-hover:text-white">Geometry</span>
+                        </div>
+
+                        <!-- 4. Lists & Spreadsheet -->
+                        <div onclick="switchTab('lists')" class="flex flex-col items-center group cursor-pointer">
+                            <div class="ti-app-icon icon-list">
+                                <i class="fa-solid fa-table-cells text-2xl text-white"></i>
+                            </div>
+                            <span class="text-[11px] text-slate-300 mt-1.5 font-medium group-hover:text-white">Spreadsheet</span>
+                        </div>
+
+                        <!-- 5. Data & Statistics -->
+                        <div onclick="switchTab('lists')" class="flex flex-col items-center group cursor-pointer">
+                            <div class="ti-app-icon icon-stat">
+                                <i class="fa-solid fa-chart-column text-2xl text-white"></i>
+                            </div>
+                            <span class="text-[11px] text-slate-300 mt-1.5 font-medium group-hover:text-white">Statistics</span>
+                        </div>
+
+                        <!-- 6. Notes (Highlighted as in the user's slide!) -->
+                        <div onclick="switchTab('notes')" class="flex flex-col items-center group cursor-pointer relative">
+                            <div class=" -top-3 bg-red-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-lg z-10 animate-bounce">
+                                ★ NOTES
+                            </div>
+                            <div class="ti-app-icon icon-notes ring-4 ring-red-500/80">
+                                <i class="fa-solid fa-file-lines text-2xl text-white"></i>
+                            </div>
+                            <span class="text-[11px] text-amber-300 mt-1.5 font-bold group-hover:text-amber-200">Notes (CAS)</span>
+                        </div>
+
+                        <!-- 7. DataQuest -->
+                        <div onclick="openExamTrainerModal()" class="flex flex-col items-center group cursor-pointer">
+                            <div class="ti-app-icon icon-quest">
+                                <i class="fa-solid fa-flask text-2xl text-white"></i>
+                            </div>
+                            <span class="text-[11px] text-slate-300 mt-1.5 font-medium group-hover:text-white">DataQuest</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================================================================== -->
+            <!-- VIEW 1: 1.1 CALCULATOR (CLASSIC CAS WORKSPACE + STEP-BY-STEP)       -->
+            <!-- =================================================================== -->
+            <div id="view-calc" class="hidden flex-1 flex flex-col bg-white text-slate-900 overflow-hidden">
+                <!-- Calculator Sub-Toolbar (Menu & Quick Examples) -->
+                <div class="bg-slate-100 border-b border-slate-300 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                        <!-- TI-Nspire Menu Dropdown -->
+                        <div class="relative">
+                            <button onclick="toggleCasMenu()" class="bg-blue-700 hover:bg-blue-600 text-white font-bold px-3 py-1.5 rounded shadow-sm flex items-center gap-1.5">
+                                <i class="fa-solid fa-bars"></i> menu (Algebra-Befehle) <i class="fa-solid fa-caret-down"></i>
+                            </button>
+                            <!-- Dropdown Menu -->
+                            <div id="cas-menu-dropdown" class="hidden absolute left-0 mt-1 w-72 bg-white border-2 border-slate-400 rounded-lg shadow-2xl z-30 py-1 text-slate-800">
+                                <div class="px-3 py-1 bg-slate-200 font-bold text-[11px] text-slate-600 uppercase">3: Algebra (Wichtig für Prüfungen)</div>
+                                <button onclick="insertCommand('expand((2x+3y)^2)', true)" class="w-full text-left px-3 py-2 hover:bg-blue-50 flex justify-between items-center">
+                                    <span><strong>1: Entwickeln</strong> (Ausmultiplizieren)</span>
+                                    <code class="text-blue-700 font-bold">expand()</code>
+                                </button>
+                                <button onclick="insertCommand('factor(9x^2-24xy+16y^2)', true)" class="w-full text-left px-3 py-2 hover:bg-blue-50 flex justify-between items-center">
+                                    <span><strong>2: Faktorisieren</strong> (In Klammern)</span>
+                                    <code class="text-blue-700 font-bold">factor()</code>
+                                </button>
+                                <button onclick="insertCommand('solve((x+3)^2 = x^2+21, x)', true)" class="w-full text-left px-3 py-2 hover:bg-blue-50 flex justify-between items-center">
+                                    <span><strong>3: Lösen</strong> (Gleichung nach x)</span>
+                                    <code class="text-blue-700 font-bold">solve()</code>
+                                </button>
+                                <div class="px-3 py-1 bg-slate-200 font-bold text-[11px] text-slate-600 uppercase mt-1">1: Aktionen & Analysis</div>
+                                <button onclick="insertCommand('f1(x) := (x-2)^2 - 1', true)" class="w-full text-left px-3 py-2 hover:bg-blue-50 flex justify-between items-center">
+                                    <span><strong>4: Definieren</strong> (Funktion/Variable)</span>
+                                    <code class="text-blue-700 font-bold">:=</code>
+                                </button>
+                                <button onclick="insertCommand('diff((3x-4)^2, x)', true)" class="w-full text-left px-3 py-2 hover:bg-blue-50 flex justify-between items-center">
+                                    <span><strong>5: Ableiten</strong> (Differential)</span>
+                                    <code class="text-blue-700 font-bold">diff()</code>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Insert Pills -->
+                        <button onclick="insertAtCursor('(', ')/()')" class="bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-800 font-mono font-bold px-2.5 py-1 rounded shadow-sm" title="Bruch eingeben (Zähler/Nenner)">a/b (Bruch)</button>
+                        <button onclick="insertAtCursor('sqrt(', ')')" class="bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-800 font-mono font-bold px-2.5 py-1 rounded shadow-sm" title="Quadratwurzel eingeben">√( )</button>
+                        <button onclick="insertAtCursor('^', '')" class="bg-white hover:bg-slate-200 border border-slate-300 text-slate-800 font-mono font-bold px-2.5 py-1 rounded shadow-sm" title="Potenz / Hochzahl (z.B. a^4)">a^n</button>
+                        <button onclick="insertAtCursor('^2', '')" class="bg-white hover:bg-slate-200 border border-slate-300 text-slate-800 font-mono font-bold px-2.5 py-1 rounded shadow-sm">x²</button>
+                        <button onclick="insertAtCursor('expand(', ')')" class="bg-white hover:bg-blue-50 border border-slate-300 text-blue-800 font-mono font-bold px-2.5 py-1 rounded shadow-sm" title="Klammern ausmultiplizieren">expand( )</button>
+                        <button onclick="insertAtCursor('factor(', ')')" class="bg-white hover:bg-blue-50 border border-slate-300 text-blue-800 font-mono font-bold px-2.5 py-1 rounded shadow-sm" title="Term in Klammern faktorisieren">factor( )</button>
+                        <button onclick="insertAtCursor('solve(', ', x)')" class="bg-white hover:bg-blue-50 border border-slate-300 text-blue-800 font-mono font-bold px-2.5 py-1 rounded shadow-sm" title="Gleichung nach Variable lösen">solve( )</button>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <button onclick="loadWorksheetTasks(false)" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 font-semibold px-2.5 py-1 rounded" title="Fügt die Aufgaben 23–27 unten an, ohne deine bisherigen Rechnungen zu löschen">
+                            <i class="fa-solid fa-plus"></i> Aufgaben 23–27
+                        </button>
+                        <button onclick="loadSampleBinomialCalculations(false)" class="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-semibold px-2.5 py-1 rounded" title="Fügt Binom-Beispiele unten an, ohne deine Rechnungen zu löschen">
+                            <i class="fa-solid fa-plus"></i> Binom-Beispiele
+                        </button>
+                        <button onclick="clearCalcHistory()" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-semibold px-2.5 py-1 rounded" title="Verlauf komplett leeren">
+                            <i class="fa-solid fa-trash-can"></i> Leeren
+                        </button>
+                    </div>
+                </div>
+
+                <!-- FIX HINTERLEGTE 3 BINOMISCHE FORMELN LEISTE -->
+                <div class="bg-gradient-to-r from-amber-50 via-blue-50 to-emerald-50 border-b-2 border-slate-300 px-3 py-2 shadow-sm">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                            <i class="fa-solid fa-thumbtack text-red-600"></i> Fix hinterlegt: Die 3 Binomischen Formeln (Klick setzt Vorlage direkt ein)
+                        </span>
+                        <span class="text-[11px] text-slate-500 hidden sm:inline">Vorwärts = <code class="font-bold text-blue-700">expand()</code> | Rückwärts = <code class="font-bold text-amber-800">factor()</code></span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                        <!-- 1. Binomische Formel -->
+                        <div class="bg-white/95 border border-sky-300 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2 shadow-sm">
+                            <div>
+                                <div class="text-[10px] font-extrabold text-sky-700 uppercase">1. Binom (Plus)</div>
+                                <div class="cas-mono font-bold text-slate-900 text-xs sm:text-sm">(a + b)² = a² + 2ab + b²</div>
+                            </div>
+                            <div class="flex flex-col gap-1 shrink-0">
+                                <button onclick="insertBinomTemplate('expand((a + b)^2)')" class="bg-sky-100 hover:bg-sky-200 text-sky-900 font-semibold px-2 py-0.5 rounded text-[10px] cas-mono transition" title="1. Binom ausmultiplizieren">→ expand</button>
+                                <button onclick="insertBinomTemplate('factor(a^2 + 2*a*b + b^2)')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-2 py-0.5 rounded text-[10px] cas-mono transition" title="1. Binom faktorisieren">← factor</button>
+                            </div>
+                        </div>
+
+                        <!-- 2. Binomische Formel -->
+                        <div class="bg-white/95 border border-amber-300 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2 shadow-sm">
+                            <div>
+                                <div class="text-[10px] font-extrabold text-amber-700 uppercase">2. Binom (Minus)</div>
+                                <div class="cas-mono font-bold text-slate-900 text-xs sm:text-sm">(a − b)² = a² − 2ab + b²</div>
+                            </div>
+                            <div class="flex flex-col gap-1 shrink-0">
+                                <button onclick="insertBinomTemplate('expand((a - b)^2)')" class="bg-amber-100 hover:bg-amber-200 text-amber-950 font-semibold px-2 py-0.5 rounded text-[10px] cas-mono transition" title="2. Binom ausmultiplizieren">→ expand</button>
+                                <button onclick="insertBinomTemplate('factor(a^2 - 2*a*b + b^2)')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-2 py-0.5 rounded text-[10px] cas-mono transition" title="2. Binom faktorisieren">← factor</button>
+                            </div>
+                        </div>
+
+                        <!-- 3. Binomische Formel -->
+                        <div class="bg-white/95 border border-emerald-300 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2 shadow-sm">
+                            <div>
+                                <div class="text-[10px] font-extrabold text-emerald-700 uppercase">3. Binom (Plus·Minus)</div>
+                                <div class="cas-mono font-bold text-slate-900 text-xs sm:text-sm">(a + b)(a − b) = a² − b²</div>
+                            </div>
+                            <div class="flex flex-col gap-1 shrink-0">
+                                <button onclick="insertBinomTemplate('expand((a + b)*(a - b))')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-semibold px-2 py-0.5 rounded text-[10px] cas-mono transition" title="3. Binom ausmultiplizieren">→ expand</button>
+                                <button onclick="insertBinomTemplate('factor(a^2 - b^2)')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-2 py-0.5 rounded text-[10px] cas-mono transition" title="3. Binom faktorisieren">← factor</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calculation History Scroll Area -->
+                <div id="calc-history-list" class="flex-1 overflow-y-auto p-4 space-y-3 bg-white">
+                    <!-- Populated dynamically on load -->
+                </div>
+
+                <!-- Bottom Input Bar (Very Clear & Prominent ENTER Button!) -->
+                <div class="bg-slate-100 border-t-2 border-slate-300 p-3">
+                    <div class="flex flex-wrap sm:flex-nowrap items-center gap-2">
+                        <div class="bg-blue-700 text-white font-mono font-bold text-xs px-2.5 py-2.5 rounded-lg shadow-sm select-none">
+                            CAS ▶
+                        </div>
+                        <div class="relative flex-1 min-w-[200px]">
+                            <input id="calc-main-input" type="text" autocomplete="off" spellcheck="false"
+                                class="w-full bg-white border-2 border-blue-500 focus:border-blue-700 rounded-xl px-3.5 py-2.5 text-slate-900 cas-mono text-base shadow-inner outline-none"
+                                placeholder="z.B. a^4+a^4 oder sqrt((6a)^2+(8a)^2) oder (a-1)/(a^2-1)">
+                        </div>
+                        <button onclick="evaluateCalcInput(false)" class="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-extrabold px-4 py-2.5 rounded-xl shadow-md flex items-center gap-2 transition text-sm sm:text-base cursor-pointer" title="Exaktes Resultat (Bruch / Symbolisch)">
+                            <span>ENTER ↵</span>
+                            <span class="hidden md:inline text-xs font-normal bg-emerald-800/60 px-2 py-0.5 rounded">Exakt / Bruch</span>
+                        </button>
+                        <button onclick="evaluateCalcInput(true)" class="bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold px-3 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 transition text-xs sm:text-sm cursor-pointer" title="ctrl + enter: Dezimalwert berechnen">
+                            <span>≈ Dezimal</span>
+                        </button>
+                    </div>
+
+                    <!-- One-Click Demo Tasks below Input -->
+                    <div class="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-600">
+                        <span class="font-semibold text-slate-500">Direkt-Klick (Sofort testen):</span>
+                        <button onclick="runDirectDemo('a^4 + a^4')" class="bg-blue-100 hover:bg-blue-200 text-blue-900 font-semibold px-2 py-0.5 rounded cas-mono transition">a^4 + a^4</button>
+                        <button onclick="runDirectDemo('sqrt((6a)^2 + (8a)^2)')" class="bg-slate-200 hover:bg-blue-100 hover:text-blue-800 px-2 py-0.5 rounded cas-mono transition">23) √((6a)²+(8a)²)</button>
+                        <button onclick="runDirectDemo('sqrt(1 - 9/25)')" class="bg-slate-200 hover:bg-blue-100 hover:text-blue-800 px-2 py-0.5 rounded cas-mono transition">24) √(1 - 9/25)</button>
+                        <button onclick="runDirectDemo('sqrt(4a) + sqrt(9a)')" class="bg-slate-200 hover:bg-blue-100 hover:text-blue-800 px-2 py-0.5 rounded cas-mono transition">25) √(4a) + √(9a)</button>
+                        <button onclick="runDirectDemo('sqrt(a^2 + 4a + 4)')" class="bg-slate-200 hover:bg-blue-100 hover:text-blue-800 px-2 py-0.5 rounded cas-mono transition">26) √(a²+4a+4)</button>
+                        <button onclick="runDirectDemo('(a - 1)/(a^2 - 1)')" class="bg-slate-200 hover:bg-blue-100 hover:text-blue-800 px-2 py-0.5 rounded cas-mono transition">27) (a-1)/(a²-1)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================================================================== -->
+            <!-- VIEW 2: 1.2 NOTES ("RECHNEN IN DER APPLIKATION NOTES")              -->
+            <!-- =================================================================== -->
+            <div id="view-notes" class="hidden flex-1 flex flex-col bg-amber-50/40 text-slate-900 overflow-hidden">
+                <!-- Notes Toolbar -->
+                <div class="bg-amber-100 border-b border-amber-300 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-amber-500 text-slate-950 font-extrabold px-2.5 py-1 rounded text-xs flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-file-lines"></i> Applikation „Notes“
+                        </span>
+                        <span class="text-xs text-amber-950 font-medium hidden md:inline">
+                            Kombiniere eigene Prüfungsnotizen mit live rechnenden <strong>CAS Math-Boxen</strong>!
+                        </span>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="addNotesMathBox()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-square-root-variable"></i> + Math-Box einfügen (Ctrl+M)
+                        </button>
+                        <button onclick="addNotesTextBlock()" class="bg-white hover:bg-amber-50 text-slate-800 border border-amber-400 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-paragraph"></i> + Text-Notiz
+                        </button>
+                        <button onclick="evaluateAllMathBoxes()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-rotate"></i> Alle Boxen berechnen
+                        </button>
+                        <button onclick="resetNotesToBinomialTemplate()" class="bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition" title="Standard-Lernblatt wiederherstellen">
+                            Vorlage laden
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Notes Document Container -->
+                <div id="notes-container" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-white max-w-4xl w-full mx-auto shadow-inner">
+                    <!-- Populated dynamically with interactive text + Math-Boxes -->
+                </div>
+            </div>
+
+            <!-- =================================================================== -->
+            <!-- VIEW 3: 1.3 GRAPHS (INTERACTIVE FUNCTION PLOTTER & ANALYSIS)        -->
+            <!-- =================================================================== -->
+            <div id="view-graphs" class="hidden flex-1 flex flex-col bg-white text-slate-900 overflow-hidden">
+                <!-- Function Entry Bar -->
+                <div class="bg-sky-50 border-b border-sky-200 p-3 flex flex-wrap items-center gap-2">
+                    <div class="flex items-center space-x-2 flex-1 min-w-[220px]">
+                        <span class="bg-sky-600 text-white cas-mono font-bold px-2.5 py-1.5 rounded text-sm">f1(x) =</span>
+                        <input id="graph-f1-input" type="text" value="2.4*x + 14"
+                            onkeydown="if(event.key==='Enter') updateGraphFromUI(true)"
+                            class="flex-1 bg-white border-2 border-sky-400 rounded-lg px-3 py-1.5 cas-mono text-sm text-slate-900 outline-none focus:border-sky-600"
+                            placeholder="z.B. 2.4*x + 14">
+                    </div>
+
+                    <div class="flex items-center space-x-2 flex-1 min-w-[220px]">
+                        <span class="bg-rose-600 text-white cas-mono font-bold px-2.5 py-1.5 rounded text-sm">f2(x) =</span>
+                        <input id="graph-f2-input" type="text" value="3.2*x + 6"
+                            onkeydown="if(event.key==='Enter') updateGraphFromUI(true)"
+                            class="flex-1 bg-white border-2 border-rose-300 rounded-lg px-3 py-1.5 cas-mono text-sm text-slate-900 outline-none focus:border-rose-500"
+                            placeholder="Optional: 2. Funktion">
+                    </div>
+
+                    <button onclick="updateGraphFromUI(true)" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs sm:text-sm shadow transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Zeichnen & Auto-Zoom ↵
+                    </button>
+
+                    <div class="flex items-center space-x-1">
+                        <button onclick="zoomGraph(0.75)" class="bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold px-2.5 py-1.5 rounded-lg text-xs shadow-sm transition" title="Reinzoomen (+)">
+                            <i class="fa-solid fa-magnifying-glass-plus"></i> +
+                        </button>
+                        <button onclick="zoomGraph(1.35)" class="bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold px-2.5 py-1.5 rounded-lg text-xs shadow-sm transition" title="Rauszoomen (-)">
+                            <i class="fa-solid fa-magnifying-glass-minus"></i> −
+                        </button>
+                        <button onclick="autoFitGraph()" class="bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 font-bold px-2.5 py-1.5 rounded-lg text-xs shadow-sm transition" title="Fenster automatisch an Schnittpunkt & Achsen anpassen">
+                            <i class="fa-solid fa-crosshairs"></i> Schnittpunkt-Fokus
+                        </button>
+                        <button onclick="resetGraphZoom()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg text-xs transition" title="Standard-Ansicht (-10 bis 10)">
+                            Standard
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Graph Canvas & Side Analysis Panel -->
+                <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+                    <div class="flex-1 relative bg-slate-50 min-h-[380px] select-none" id="graph-canvas-wrapper">
+                        <canvas id="graph-canvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+                        <!-- Live Coordinates Overlay -->
+                        <div id="graph-coords-badge" class="absolute top-3 left-3 bg-white/95 backdrop-blur border border-slate-300 px-3 py-1.5 rounded-lg shadow text-xs cas-mono text-slate-800 pointer-events-none">
+                            🖱️ Mausrad = Zoomen &nbsp;|&nbsp; ✋ Ziehen = Verschieben
+                        </div>
+                        <!-- Floating On-Canvas Zoom Controls -->
+                        <div class="absolute bottom-3 right-3 flex flex-col gap-1.5 bg-white/90 backdrop-blur p-1.5 rounded-xl border border-slate-300 shadow-lg">
+                            <button onclick="zoomGraph(0.75)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-800 font-bold flex items-center justify-center transition" title="Reinzoomen">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                            <button onclick="zoomGraph(1.35)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-800 font-bold flex items-center justify-center transition" title="Rauszoomen">
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
+                            <button onclick="autoFitGraph()" class="w-8 h-8 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold flex items-center justify-center transition" title="Auf Schnittpunkt & Funktionen zoomen">
+                                <i class="fa-solid fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Automatic Curve Analysis (Kurvendiskussion & Schnittpunkt) -->
+                    <div class="w-full md:w-80 bg-slate-100 border-t md:border-t-0 md:border-l border-slate-300 p-4 overflow-y-auto space-y-3 text-xs">
+                        <div class="font-bold text-slate-800 text-sm flex items-center gap-1.5 border-b border-slate-300 pb-2">
+                            <i class="fa-solid fa-magnifying-glass-chart text-sky-600"></i>
+                            CAS-Analyse & Schnittpunkt
+                        </div>
+                        <div id="graph-analysis-output" class="space-y-2.5">
+                            <!-- Filled automatically by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================================================================== -->
+            <!-- VIEW 4: 1.4 LISTS & SPREADSHEET (CONNECTED VALUE TABLE)             -->
+            <!-- =================================================================== -->
+            <div id="view-lists" class="hidden flex-1 flex flex-col bg-white text-slate-900 overflow-hidden">
+                <div class="bg-teal-50 border-b border-teal-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-teal-600 text-white font-bold px-2.5 py-1 rounded">1.4 Lists & Spreadsheet</span>
+                        <span class="text-teal-950">Automatisch verbunden mit <code class="font-bold">f1(x)</code> und <code class="font-bold">f2(x)</code> aus dem CAS-Speicher</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label class="text-slate-700 font-semibold">Start x:</label>
+                        <input id="table-start-x" type="number" value="-5" onchange="renderSpreadsheet()" class="w-16 border border-slate-300 rounded px-2 py-1 cas-mono">
+                        <label class="text-slate-700 font-semibold">Schritt Δx:</label>
+                        <input id="table-step-x" type="number" value="1" step="0.5" onchange="renderSpreadsheet()" class="w-16 border border-slate-300 rounded px-2 py-1 cas-mono">
+                        <button onclick="renderSpreadsheet()" class="bg-teal-600 hover:bg-teal-500 text-white font-bold px-3 py-1 rounded shadow-sm">
+                            Aktualisieren
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-auto p-4">
+                    <table class="w-full border-collapse text-sm cas-mono">
+                        <thead>
+                            <tr class="bg-slate-200 text-slate-800 border-b-2 border-slate-400">
+                                <th class="border border-slate-300 px-3 py-2 w-12 text-center bg-slate-300">#</th>
+                                <th class="border border-slate-300 px-4 py-2 text-left">A: x (Eingabe)</th>
+                                <th class="border border-slate-300 px-4 py-2 text-left text-sky-800">B: := f1(x)</th>
+                                <th class="border border-slate-300 px-4 py-2 text-left text-rose-800">C: := f2(x)</th>
+                                <th class="border border-slate-300 px-4 py-2 text-left text-emerald-800">D: Differenz f1(x) - f2(x)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="spreadsheet-body">
+                            <!-- Dynamically generated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- COLLAPSIBLE HANDHELD KEYPAD (RIGHT PANEL)                           -->
+        <!-- =================================================================== -->
+        <aside id="handheld-keypad" class="w-full lg:w-80 bg-gradient-to-b from-slate-800 to-slate-900 rounded-2xl border-2 border-slate-700 p-4 flex flex-col justify-between shadow-2xl shrink-0">
+            <div>
+                <div class="flex items-center justify-between border-b border-slate-700 pb-2 mb-3">
+                    <span class="text-xs font-bold tracking-wider uppercase text-slate-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-gamepad text-blue-400"></i> TI-Nspire™ Tastenfeld
+                    </span>
+                    <span class="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded">Klick tippt in aktives Feld</span>
+                </div>
+
+                <!-- System Navigation Keys -->
+                <div class="grid grid-cols-4 gap-1.5 mb-3 text-xs">
+                    <button onclick="switchTab('home')" class="hw-btn py-2 flex flex-col items-center justify-center">
+                        <i class="fa-solid fa-house text-sky-400 text-xs"></i>
+                        <span class="text-[10px] mt-0.5">home</span>
+                    </button>
+                    <button onclick="switchTab('calc')" class="hw-btn py-2 flex flex-col items-center justify-center">
+                        <i class="fa-solid fa-calculator text-amber-400 text-xs"></i>
+                        <span class="text-[10px] mt-0.5">scratch</span>
+                    </button>
+                    <button onclick="switchTab('notes')" class="hw-btn py-2 flex flex-col items-center justify-center">
+                        <i class="fa-solid fa-file-lines text-yellow-400 text-xs"></i>
+                        <span class="text-[10px] mt-0.5">notes</span>
+                    </button>
+                    <button onclick="keypadBackspace()" class="hw-btn py-2 flex flex-col items-center justify-center text-rose-300">
+                        <i class="fa-solid fa-delete-left text-xs"></i>
+                        <span class="text-[10px] mt-0.5">del</span>
+                    </button>
+                </div>
+
+                <!-- Direct CAS Algebra Function Keys -->
+                <div class="grid grid-cols-3 gap-1.5 mb-2 text-xs cas-mono">
+                    <button onclick="keypadInsert('expand(', ')')" class="hw-btn hw-btn-blue py-2 text-xs">expand( )</button>
+                    <button onclick="keypadInsert('factor(', ')')" class="hw-btn hw-btn-blue py-2 text-xs">factor( )</button>
+                    <button onclick="keypadInsert('solve(', ', x)')" class="hw-btn hw-btn-blue py-2 text-xs">solve( )</button>
+                </div>
+
+                <!-- Fix hinterlegte Binomische Formeln Direkt-Tasten -->
+                <div class="mb-3 bg-slate-950/80 border border-slate-700 rounded-xl p-2">
+                    <div class="text-[10px] text-amber-400 font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                        <i class="fa-solid fa-thumbtack"></i> Binomische Formeln (Fix)
+                    </div>
+                    <div class="grid grid-cols-3 gap-1.5 text-[11px] cas-mono">
+                        <button onclick="insertBinomTemplate('expand((a+b)^2)')" class="hw-btn py-1.5 text-sky-300 border-sky-700/80" title="1. Binomische Formel: (a+b)² = a²+2ab+b²">
+                            1. (a+b)²
+                        </button>
+                        <button onclick="insertBinomTemplate('expand((a-b)^2)')" class="hw-btn py-1.5 text-amber-300 border-amber-700/80" title="2. Binomische Formel: (a-b)² = a²-2ab+b²">
+                            2. (a-b)²
+                        </button>
+                        <button onclick="insertBinomTemplate('expand((a+b)*(a-b))')" class="hw-btn py-1.5 text-emerald-300 border-emerald-700/80" title="3. Binomische Formel: (a+b)(a-b) = a²-b²">
+                            3. (a+b)(a-b)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Math Operators & Powers -->
+                <div class="grid grid-cols-5 gap-1.5 mb-3 text-xs cas-mono">
+                    <button onclick="keypadInsert(' := ', '')" class="hw-btn py-2 text-amber-300 font-bold">:=</button>
+                    <button onclick="keypadInsert('^2', '')" class="hw-btn py-2">x²</button>
+                    <button onclick="keypadInsert('^', '')" class="hw-btn py-2">^</button>
+                    <button onclick="keypadInsert('sqrt(', ')')" class="hw-btn py-2">√</button>
+                    <button onclick="keypadInsert('=', '')" class="hw-btn py-2 text-sky-300 font-bold">=</button>
+                </div>
+
+                <!-- Main Number & Operator Pad -->
+                <div class="grid grid-cols-5 gap-1.5 mb-3 text-sm cas-mono">
+                    <button onclick="keypadInsert('7', '')" class="hw-btn hw-btn-num py-2.5 rounded">7</button>
+                    <button onclick="keypadInsert('8', '')" class="hw-btn hw-btn-num py-2.5 rounded">8</button>
+                    <button onclick="keypadInsert('9', '')" class="hw-btn hw-btn-num py-2.5 rounded">9</button>
+                    <button onclick="keypadInsert('/', '')" class="hw-btn py-2.5 text-amber-400 font-bold">÷</button>
+                    <button onclick="keypadInsert('(', '')" class="hw-btn py-2.5">(</button>
+
+                    <button onclick="keypadInsert('4', '')" class="hw-btn hw-btn-num py-2.5 rounded">4</button>
+                    <button onclick="keypadInsert('5', '')" class="hw-btn hw-btn-num py-2.5 rounded">5</button>
+                    <button onclick="keypadInsert('6', '')" class="hw-btn hw-btn-num py-2.5 rounded">6</button>
+                    <button onclick="keypadInsert('*', '')" class="hw-btn py-2.5 text-amber-400 font-bold">×</button>
+                    <button onclick="keypadInsert(')', '')" class="hw-btn py-2.5">)</button>
+
+                    <button onclick="keypadInsert('1', '')" class="hw-btn hw-btn-num py-2.5 rounded">1</button>
+                    <button onclick="keypadInsert('2', '')" class="hw-btn hw-btn-num py-2.5 rounded">2</button>
+                    <button onclick="keypadInsert('3', '')" class="hw-btn hw-btn-num py-2.5 rounded">3</button>
+                    <button onclick="keypadInsert('-', '')" class="hw-btn py-2.5 text-amber-400 font-bold">−</button>
+                    <button onclick="keypadInsert(',', '')" class="hw-btn py-2.5">,</button>
+
+                    <button onclick="keypadInsert('0', '')" class="hw-btn hw-btn-num py-2.5 rounded">0</button>
+                    <button onclick="keypadInsert('.', '')" class="hw-btn hw-btn-num py-2.5 rounded">.</button>
+                    <button onclick="keypadInsert('pi', '')" class="hw-btn py-2.5">π</button>
+                    <button onclick="keypadInsert('+', '')" class="hw-btn py-2.5 text-amber-400 font-bold">+</button>
+                    <button onclick="triggerActiveEnter()" class="hw-btn hw-btn-enter py-2.5 font-extrabold text-xs">enter</button>
+                </div>
+
+                <!-- Alpha Variable Keys (a, b, c, x, y, z) -->
+                <div class="border-t border-slate-700 pt-2.5">
+                    <div class="text-[10px] text-slate-400 uppercase font-semibold mb-1.5">Algebra-Variablen (Buchstaben)</div>
+                    <div class="grid grid-cols-6 gap-1.5 cas-mono text-xs">
+                        <button onclick="keypadInsert('x', '')" class="hw-btn py-2 text-sky-300 font-bold">x</button>
+                        <button onclick="keypadInsert('y', '')" class="hw-btn py-2 text-sky-300 font-bold">y</button>
+                        <button onclick="keypadInsert('z', '')" class="hw-btn py-2 text-sky-300 font-bold">z</button>
+                        <button onclick="keypadInsert('a', '')" class="hw-btn py-2 text-emerald-300 font-bold">a</button>
+                        <button onclick="keypadInsert('b', '')" class="hw-btn py-2 text-emerald-300 font-bold">b</button>
+                        <button onclick="keypadInsert('c', '')" class="hw-btn py-2 text-emerald-300 font-bold">c</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Big Bottom Enter Bar -->
+            <button onclick="triggerActiveEnter()" class="mt-3 w-full hw-btn hw-btn-enter py-3 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg">
+                <span>ENTER ↵ (Berechnen)</span>
+            </button>
+        </aside>
+
+    </main>
+
+    <!-- =================================================================== -->
+    <!-- MODAL 1: GLOBAL CAS VARIABLES & MEMORY INSPECTOR                    -->
+    <!-- =================================================================== -->
+    <div id="var-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-base text-white flex items-center gap-2">
+                    <i class="fa-solid fa-database text-emerald-400"></i> Verbundener CAS-Variablenspeicher
+                </h3>
+                <button onclick="toggleVarModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+                Wie auf deiner Präsentationsfolie gezeigt, teilen sich alle Applikationen (<strong>Calculator</strong>, <strong>Notes</strong>, <strong>Graphs</strong> und <strong>Spreadsheet</strong>) denselben CAS-Speicher. Mit <code class="text-amber-300">:=</code> kannst du eigene Werte oder Funktionen speichern.
+            </p>
+            <div id="var-modal-list" class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2 cas-mono text-xs max-h-60 overflow-y-auto">
+                <!-- Filled dynamically -->
+            </div>
+            <div class="flex justify-between items-center pt-2">
+                <button onclick="resetAllCasVariables()" class="text-xs text-rose-400 hover:text-rose-300 font-semibold">
+                    Speicher auf Standard zurücksetzen
+                </button>
+                <button onclick="toggleVarModal()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-lg">
+                    Schliessen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- MODAL 2: EXAM CHEAT-SHEET (SPICKZETTEL BINOMISCHE FORMELN & CAS)    -->
+    <!-- =================================================================== -->
+    <div id="exam-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-lg text-amber-400 flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap"></i> Prüfungs-Spickzettel: Binomische Formeln mit dem TI-Nspire CAS
+                </h3>
+                <button onclick="closeExamTrainerModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div class="bg-slate-800/90 border border-slate-700 p-3.5 rounded-xl">
+                    <div class="text-sky-400 font-bold mb-1">1. Binomische Formel</div>
+                    <div class="cas-mono text-sm font-bold text-white mb-1">(a + b)² = a² + 2ab + b²</div>
+                    <div class="text-slate-400">Plus in der Klammer → alle Vorzeichen plus.</div>
+                </div>
+                <div class="bg-slate-800/90 border border-slate-700 p-3.5 rounded-xl">
+                    <div class="text-amber-400 font-bold mb-1">2. Binomische Formel</div>
+                    <div class="cas-mono text-sm font-bold text-white mb-1">(a − b)² = a² − 2ab + b²</div>
+                    <div class="text-slate-400">Minus vor dem doppelten Produkt, aber <strong>+ b²</strong> am Ende!</div>
+                </div>
+                <div class="bg-slate-800/90 border border-slate-700 p-3.5 rounded-xl">
+                    <div class="text-emerald-400 font-bold mb-1">3. Binomische Formel</div>
+                    <div class="cas-mono text-sm font-bold text-white mb-1">(a + b)(a − b) = a² − b²</div>
+                    <div class="text-slate-400">Der Mittelterm fällt weg (Differenz zweier Quadrate).</div>
+                </div>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2.5 text-xs">
+                <div class="font-bold text-white text-sm mb-1">Die 4 wichtigsten TI-Nspire CAS Befehle für die Prüfung:</div>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
+                    <div>
+                        <span class="font-bold text-sky-400">Klammern auflösen:</span>
+                        <code class="cas-mono ml-2 bg-slate-800 px-2 py-0.5 rounded text-white">expand((3x - 4y)^2)</code>
+                    </div>
+                    <button onclick="closeExamTrainerModal(); switchTab('calc'); runDirectDemo('expand((3x - 4y)^2)')" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded font-semibold shrink-0">
+                        Im Rechner testen →
+                    </button>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
+                    <div>
+                        <span class="font-bold text-amber-400">Faktorisieren (Rückwärts):</span>
+                        <code class="cas-mono ml-2 bg-slate-800 px-2 py-0.5 rounded text-white">factor(25a^2 - 36b^2)</code>
+                    </div>
+                    <button onclick="closeExamTrainerModal(); switchTab('calc'); runDirectDemo('factor(25a^2 - 36b^2)')" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded font-semibold shrink-0">
+                        Im Rechner testen →
+                    </button>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
+                    <div>
+                        <span class="font-bold text-emerald-400">Gleichung nach x lösen:</span>
+                        <code class="cas-mono ml-2 bg-slate-800 px-2 py-0.5 rounded text-white">solve((x + 3)^2 = x^2 + 21, x)</code>
+                    </div>
+                    <button onclick="closeExamTrainerModal(); switchTab('calc'); runDirectDemo('solve((x + 3)^2 = x^2 + 21, x)')" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded font-semibold shrink-0">
+                        Im Rechner testen →
+                    </button>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                        <span class="font-bold text-purple-400">Rechnen in „Notes“:</span>
+                        <span class="text-slate-300 ml-1">Interaktives Aufgabenblatt mit live rechnenden Math-Boxen</span>
+                    </div>
+                    <button onclick="closeExamTrainerModal(); switchTab('notes')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-2.5 py-1 rounded font-bold shrink-0">
+                        Notes öffnen →
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button onclick="closeExamTrainerModal()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-4 py-2 rounded-lg">
+                    Schliessen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- JAVASCRIPT: CAS ALGEBRA KERNEL, STEP-BY-STEP SOLVER & UI LOGIC      -->
+    <!-- =================================================================== -->
+    <script>
+        /***********************************************************************
+         * 1. GLOBAL CAS MEMORY (Connected across Calculator, Notes, Graphs, Lists)
+         ***********************************************************************/
+        const casMemory = {
+            angleMode: 'DEG',
+            variables: {
+                k: '3'
+            },
+            functions: {
+                f1: '2.4*x + 14',
+                f2: '3.2*x + 6'
+            }
+        };
+
+        let activeInputElement = null;
+        let currentTab = 'home';
+        const SIMULATOR_STORAGE_KEY = 'ti_nspire_cas_pro_saved_state_v1';
+        let savedCalcEntries = [];
+        let isRestoringState = false;
+
+        function flashSaveIndicator() {
+            const badge = document.getElementById('save-status-text');
+            if (!badge) return;
+            badge.textContent = 'Gespeichert ✓';
+            setTimeout(() => {
+                badge.textContent = 'Auto-Save aktiv';
+            }, 1400);
+        }
+
+        function serializeNotesState() {
+            const items = [];
+            const container = document.getElementById('notes-container');
+            if (!container) return items;
+            Array.from(container.children).forEach(el => {
+                if (el.dataset.noteType === 'header') {
+                    items.push({
+                        type: 'header',
+                        title: el.dataset.title || '',
+                        subtitle: el.dataset.subtitle || ''
+                    });
+                } else if (el.dataset.noteType === 'text') {
+                    const editDiv = el.querySelector('[contenteditable="true"]');
+                    items.push({
+                        type: 'text',
+                        text: editDiv ? editDiv.innerText : ''
+                    });
+                } else if (el.classList.contains('math-box')) {
+                    const inp = el.querySelector('.notes-math-input');
+                    if (inp) {
+                        items.push({
+                            type: 'math',
+                            expr: inp.value
+                        });
+                    }
+                }
+            });
+            return items;
+        }
+
+        function saveSimulatorState() {
+            if (isRestoringState) return;
+            try {
+                const state = {
+                    currentTab,
+                    casMemory,
+                    graphRange,
+                    calcEntries: savedCalcEntries,
+                    notesItems: serializeNotesState()
+                };
+                localStorage.setItem(SIMULATOR_STORAGE_KEY, JSON.stringify(state));
+                flashSaveIndicator();
+            } catch (e) {}
+        }
+
+        function loadSimulatorState() {
+            try {
+                const raw = localStorage.getItem(SIMULATOR_STORAGE_KEY);
+                if (!raw) return false;
+                const state = JSON.parse(raw);
+                if (!state || typeof state !== 'object') return false;
+
+                isRestoringState = true;
+
+                if (state.casMemory) {
+                    casMemory.angleMode = state.casMemory.angleMode || 'DEG';
+                    casMemory.variables = state.casMemory.variables || { k: '3' };
+                    casMemory.functions = state.casMemory.functions || { f1: '2.4*x + 14', f2: '3.2*x + 6' };
+                }
+                if (state.graphRange && isFinite(state.graphRange.xMin)) {
+                    graphRange = state.graphRange;
+                }
+
+                // Restore Calculator History
+                calcHistoryContainer.innerHTML = '';
+                calcStepCounter = 0;
+                savedCalcEntries = [];
+                if (Array.isArray(state.calcEntries) && state.calcEntries.length > 0) {
+                    state.calcEntries.forEach(entry => {
+                        if (entry && entry.rawExpr) {
+                            addCalcEntry(entry.rawExpr, Boolean(entry.preferDecimal));
+                        }
+                    });
+                } else {
+                    loadWorksheetTasks(false);
+                }
+
+                // Restore Notes Document
+                if (Array.isArray(state.notesItems) && state.notesItems.length > 0) {
+                    notesContainer.innerHTML = '';
+                    notesBoxCounter = 0;
+                    state.notesItems.forEach(item => {
+                        if (item.type === 'header') {
+                            addNotesHeaderBlock(item.title, item.subtitle);
+                        } else if (item.type === 'text') {
+                            addNotesTextBlock(item.text);
+                        } else if (item.type === 'math') {
+                            addNotesMathBox(item.expr);
+                        }
+                    });
+                } else {
+                    resetNotesToBinomialTemplate();
+                }
+
+                syncFunctionInputs();
+                updateGlobalVarBadge();
+                document.getElementById('angle-mode-btn').textContent = casMemory.angleMode;
+
+                const targetTab = state.currentTab || 'calc';
+                isRestoringState = false;
+                switchTab(targetTab);
+                return true;
+            } catch (e) {
+                isRestoringState = false;
+                return false;
+            }
+        }
+
+        document.addEventListener('focusin', (e) => {
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+                activeInputElement = e.target;
+            }
+        });
+
+        /***********************************************************************
+         * 2. SELF-CONTAINED EXACT RATIONAL & SYMBOLIC CAS ENGINE
+         *    Works 100% reliably without external CDN failures!
+         *    Supports:
+         *    - Exact Fractions (a/b) with GCD reduction
+         *    - Multivariate Polynomials of ANY power (a^4 + a^4 = 2a^4, etc.)
+         *    - Tolerant syntax: trailing '=', solve(term) without '=', implicit '*'
+         *    - Symbolic Square Roots: sqrt((6a)^2+(8a)^2), sqrt(4a)+sqrt(9a),
+         *      sqrt(1-9/25), sqrt(a^2+4a+4)
+         *    - Algebraic Fraction Cancellation: (a-1)/(a^2-1) -> 1/(a+1)
+         ***********************************************************************/
+        function gcdInt(a, b) {
+            a = Math.abs(Math.round(a));
+            b = Math.abs(Math.round(b));
+            while (b !== 0) {
+                const t = b;
+                b = a % b;
+                a = t;
+            }
+            return a === 0 ? 1 : a;
+        }
+
+        class Frac {
+            constructor(n, d = 1) {
+                if (d === 0) throw new Error('Division durch 0');
+                if (!Number.isInteger(n) || !Number.isInteger(d)) {
+                    // Convert float to exact rational
+                    const val = n / d;
+                    const approx = Frac.fromFloat(val);
+                    this.n = approx.n;
+                    this.d = approx.d;
+                    return;
+                }
+                if (d < 0) { n = -n; d = -d; }
+                const g = gcdInt(n, d);
+                this.n = n / g;
+                this.d = d / g;
+            }
+            static fromFloat(x) {
+                if (Number.isInteger(x)) return new Frac(x, 1);
+                let bestN = 1, bestD = 1, minErr = Math.abs(x - 1);
+                for (let d = 1; d <= 10000; d++) {
+                    const n = Math.round(x * d);
+                    const err = Math.abs(x - n / d);
+                    if (err < minErr) {
+                        minErr = err;
+                        bestN = n;
+                        bestD = d;
+                        if (err < 1e-10) break;
+                    }
+                }
+                return new Frac(bestN, bestD);
+            }
+            add(o) { return new Frac(this.n * o.d + o.n * this.d, this.d * o.d); }
+            sub(o) { return new Frac(this.n * o.d - o.n * this.d, this.d * o.d); }
+            mul(o) { return new Frac(this.n * o.n, this.d * o.d); }
+            div(o) { return new Frac(this.n * o.d, this.d * o.n); }
+            neg() { return new Frac(-this.n, this.d); }
+            isZero() { return this.n === 0; }
+            isOne() { return this.n === 1 && this.d === 1; }
+            isMinusOne() { return this.n === -1 && this.d === 1; }
+            equals(o) { return this.n === o.n && this.d === o.d; }
+            pow(exp) {
+                if (exp === 0) return new Frac(1, 1);
+                if (exp > 0) return new Frac(Math.pow(this.n, exp), Math.pow(this.d, exp));
+                return new Frac(Math.pow(this.d, -exp), Math.pow(this.n, -exp));
+            }
+            toString() {
+                return this.d === 1 ? `${this.n}` : `${this.n}/${this.d}`;
+            }
+            toDecimal() {
+                return this.n / this.d;
+            }
+        }
+
+        // Multivariate Polynomial over Frac: map of canonical key -> { coeff: Frac, vars: {a:4, b:1}, rad: { 'a': 1 } }
+        // Even better: each term can have a polynomial part AND an optional radical part sqrt(radKey)!
+        class SymPoly {
+            constructor(terms = []) {
+                this.terms = [];
+                terms.forEach(t => this.addTerm(t.coeff, t.vars, t.rad || null));
+            }
+            static scalar(frac) {
+                return new SymPoly([{ coeff: frac, vars: {}, rad: null }]);
+            }
+            static variable(name) {
+                return new SymPoly([{ coeff: new Frac(1, 1), vars: { [name]: 1 }, rad: null }]);
+            }
+            static cloneVars(vars) {
+                const out = {};
+                Object.keys(vars).sort().forEach(k => {
+                    if (vars[k] !== 0) out[k] = vars[k];
+                });
+                return out;
+            }
+            static termKey(vars, rad) {
+                const vKey = Object.keys(vars).sort().filter(k => vars[k] !== 0).map(k => `${k}^${vars[k]}`).join('*');
+                const rKey = rad ? `|sqrt(${rad})` : '';
+                return vKey + rKey;
+            }
+            addTerm(coeff, vars, rad = null) {
+                if (coeff.isZero()) return;
+                const cleanVars = SymPoly.cloneVars(vars);
+                const key = SymPoly.termKey(cleanVars, rad);
+                const existing = this.terms.find(t => SymPoly.termKey(t.vars, t.rad) === key);
+                if (existing) {
+                    existing.coeff = existing.coeff.add(coeff);
+                    if (existing.coeff.isZero()) {
+                        this.terms = this.terms.filter(t => t !== existing);
+                    }
+                } else {
+                    this.terms.push({ coeff, vars: cleanVars, rad });
+                }
+            }
+            add(other) {
+                const res = new SymPoly(this.terms);
+                other.terms.forEach(t => res.addTerm(t.coeff, t.vars, t.rad));
+                return res;
+            }
+            sub(other) {
+                const res = new SymPoly(this.terms);
+                other.terms.forEach(t => res.addTerm(t.coeff.neg(), t.vars, t.rad));
+                return res;
+            }
+            mul(other) {
+                const res = new SymPoly();
+                this.terms.forEach(t1 => {
+                    other.terms.forEach(t2 => {
+                        const newVars = { ...t1.vars };
+                        Object.keys(t2.vars).forEach(k => {
+                            newVars[k] = (newVars[k] || 0) + t2.vars[k];
+                        });
+                        let newCoeff = t1.coeff.mul(t2.coeff);
+                        let newRad = null;
+                        if (t1.rad && t2.rad) {
+                            if (t1.rad === t2.rad && /^[a-zA-Z]$/.test(t1.rad)) {
+                                // sqrt(a) * sqrt(a) = a
+                                newVars[t1.rad] = (newVars[t1.rad] || 0) + 1;
+                            } else {
+                                newRad = `${t1.rad}*${t2.rad}`;
+                            }
+                        } else {
+                            newRad = t1.rad || t2.rad;
+                        }
+                        res.addTerm(newCoeff, newVars, newRad);
+                    });
+                });
+                return res;
+            }
+            pow(n) {
+                if (n === 0) return SymPoly.scalar(new Frac(1, 1));
+                let res = SymPoly.scalar(new Frac(1, 1));
+                for (let i = 0; i < n; i++) res = res.mul(this);
+                return res;
+            }
+            isConstant() {
+                return this.terms.length === 0 || (this.terms.length === 1 && Object.keys(this.terms[0].vars).length === 0 && !this.terms[0].rad);
+            }
+            getConstantFrac() {
+                if (this.terms.length === 0) return new Frac(0, 1);
+                return this.terms[0].coeff;
+            }
+            sortTerms() {
+                this.terms.sort((a, b) => {
+                    const degA = Object.values(a.vars).reduce((s, v) => s + v, 0);
+                    const degB = Object.values(b.vars).reduce((s, v) => s + v, 0);
+                    if (degB !== degA) return degB - degA;
+                    const keyA = SymPoly.termKey(a.vars, a.rad);
+                    const keyB = SymPoly.termKey(b.vars, b.rad);
+                    return keyA.localeCompare(keyB);
+                });
+            }
+            toString(preferDecimal = false) {
+                if (this.terms.length === 0) return '0';
+                this.sortTerms();
+                let out = '';
+                this.terms.forEach((t, idx) => {
+                    const isNeg = t.coeff.n < 0;
+                    const absFrac = new Frac(Math.abs(t.coeff.n), t.coeff.d);
+                    const varKeys = Object.keys(t.vars).sort();
+                    const hasVarsOrRad = varKeys.length > 0 || Boolean(t.rad);
+
+                    let coeffStr = '';
+                    if (!hasVarsOrRad || !absFrac.isOne()) {
+                        coeffStr = preferDecimal && absFrac.d !== 1
+                            ? String(Number(absFrac.toDecimal().toFixed(6)))
+                            : absFrac.toString();
+                    }
+
+                    const varParts = varKeys.map(k => t.vars[k] === 1 ? k : `${k}^${t.vars[k]}`);
+                    if (t.rad) varParts.push(`√(${t.rad})`);
+                    const varStr = varParts.join('·');
+
+                    let termStr = '';
+                    if (coeffStr && varStr) {
+                        termStr = `${coeffStr}·${varStr}`;
+                    } else {
+                        termStr = coeffStr + varStr;
+                    }
+
+                    if (idx === 0) {
+                        out += isNeg ? `-${termStr}` : termStr;
+                    } else {
+                        out += isNeg ? ` - ${termStr}` : ` + ${termStr}`;
+                    }
+                });
+                return out;
+            }
+        }
+
+        // Simplify sqrt(SymPoly) -> returns { poly: SymPoly, note: string | null }
+        function simplifySquareRootPoly(innerPoly) {
+            innerPoly.sortTerms();
+            // 1. Constant 0
+            if (innerPoly.terms.length === 0) {
+                return { poly: new SymPoly(), note: null };
+            }
+            // 2. Single Monomial e.g. 100a^2, 16/25, 4a, 9a
+            if (innerPoly.terms.length === 1 && !innerPoly.terms[0].rad) {
+                const t = innerPoly.terms[0];
+                if (t.coeff.n < 0) throw new Error('Wurzel aus negativer Zahl ist nicht reell');
+                const num = t.coeff.n;
+                const den = t.coeff.d;
+
+                // Factor out largest square from num and den
+                let outNum = 1, remNum = num;
+                for (let k = Math.floor(Math.sqrt(num)); k >= 2; k--) {
+                    if (num % (k * k) === 0) {
+                        outNum = k;
+                        remNum = num / (k * k);
+                        break;
+                    }
+                }
+                let outDen = 1, remDen = den;
+                for (let k = Math.floor(Math.sqrt(den)); k >= 2; k--) {
+                    if (den % (k * k) === 0) {
+                        outDen = k;
+                        remDen = den / (k * k);
+                        break;
+                    }
+                }
+
+                const outVars = {};
+                const remVars = [];
+                let hadEvenVarPower = false;
+                Object.keys(t.vars).sort().forEach(v => {
+                    const exp = t.vars[v];
+                    if (exp >= 2) {
+                        outVars[v] = Math.floor(exp / 2);
+                        hadEvenVarPower = true;
+                    }
+                    if (exp % 2 === 1) {
+                        remVars.push(v);
+                    }
+                });
+
+                const remParts = [];
+                if (remNum !== 1 || remDen !== 1) {
+                    remParts.push(remDen === 1 ? `${remNum}` : `${remNum}/${remDen}`);
+                }
+                remVars.forEach(v => remParts.push(v));
+                const radStr = remParts.length > 0 ? remParts.join('·') : null;
+
+                const resPoly = new SymPoly([{
+                    coeff: new Frac(outNum, outDen),
+                    vars: outVars,
+                    rad: radStr
+                }]);
+
+                const note = hadEvenVarPower
+                    ? 'Hinweis: Für positive Variablen fällt der Betrag weg (der echte TI-Nspire zeigt sonst Betragsstriche |...| an).'
+                    : null;
+                return { poly: resPoly, note };
+            }
+
+            // 3. Check if innerPoly is a perfect binomial square: A^2 ± 2AB + B^2 = (A ± B)^2
+            const factoredSq = tryPerfectSquareTrinomial(innerPoly);
+            if (factoredSq) {
+                return {
+                    poly: factoredSq,
+                    note: `Unter der Wurzel steht die binomische Formel (${factoredSq.toString()})². Wurzel und Quadrat heben sich auf!`
+                };
+            }
+
+            // 4. Fallback symbolic root
+            return {
+                poly: new SymPoly([{ coeff: new Frac(1, 1), vars: {}, rad: innerPoly.toString() }]),
+                note: null
+            };
+        }
+
+        // Check if a 3-term polynomial is A^2 ± 2AB + B^2
+        function tryPerfectSquareTrinomial(poly) {
+            if (poly.terms.length !== 3) return null;
+            poly.sortTerms();
+            // Find two terms with positive coefficients and even variable exponents
+            const sqCandidates = [];
+            const otherTerms = [];
+            poly.terms.forEach(t => {
+                const allEven = Object.values(t.vars).every(e => e % 2 === 0);
+                const sqN = Math.round(Math.sqrt(Math.abs(t.coeff.n)));
+                const sqD = Math.round(Math.sqrt(t.coeff.d));
+                if (t.coeff.n > 0 && allEven && sqN * sqN === t.coeff.n && sqD * sqD === t.coeff.d && !t.rad) {
+                    const rootVars = {};
+                    Object.keys(t.vars).forEach(k => { rootVars[k] = t.vars[k] / 2; });
+                    sqCandidates.push({ orig: t, rootTerm: { coeff: new Frac(sqN, sqD), vars: rootVars, rad: null } });
+                } else {
+                    otherTerms.push(t);
+                }
+            });
+            if (sqCandidates.length !== 2 || otherTerms.length !== 1) return null;
+            const A = new SymPoly([sqCandidates[0].rootTerm]);
+            const B = new SymPoly([sqCandidates[1].rootTerm]);
+            const plusSq = A.add(B).pow(2);
+            if (plusSq.sub(poly).terms.length === 0) return A.add(B);
+            const minusSq = A.sub(B).pow(2);
+            if (minusSq.sub(poly).terms.length === 0) return A.sub(B);
+            return null;
+        }
+
+        /***********************************************************************
+         * 3. RECURSIVE DESCENT PARSER FOR SYMBOLIC EXPRESSIONS
+         *    Parses numbers, variables (a..z), +, -, *, /, ^, sqrt(...)
+         ***********************************************************************/
+        function normalizeCasInput(raw) {
+            let s = raw.trim();
+            // Strip trailing '=' if user typed e.g. 'a^4+a^4=' or 'sqrt(1-9/25)='
+            if (s.endsWith('=') && !s.endsWith(':=') && (s.match(/=/g) || []).length === 1) {
+                s = s.slice(0, -1).trim();
+            }
+            s = s.replace(/²/g, '^2')
+                 .replace(/³/g, '^3')
+                 .replace(/⁴/g, '^4')
+                 .replace(/·/g, '*')
+                 .replace(/×/g, '*')
+                 .replace(/÷/g, '/')
+                 .replace(/−/g, '-')
+                 .replace(/√\s*\(/g, 'sqrt(')
+                 .replace(/√([0-9a-zA-Z]+)/g, 'sqrt($1)');
+
+            const funcNames = ['expand', 'factor', 'solve', 'zeros', 'roots', 'diff', 'integral', 'sqrt', 'comDenom', 'propFrac', 'approxFraction', 'sin', 'cos', 'tan', 'abs', 'f1', 'f2', 'f'];
+            const placeholders = {};
+            funcNames.forEach((fn, idx) => {
+                // Use Private Use Area Unicode char so digits/underscores never collide with implicit multiplication
+                const token = String.fromCharCode(0xE000 + idx);
+                placeholders[token] = fn;
+                const regex = new RegExp(`\\b${fn}\\b`, 'gi');
+                s = s.replace(regex, token);
+            });
+
+            // Implicit multiplication:
+            // 1) Number followed by variable, function token or '(' e.g. 6a -> 6*a, 4(x+1) -> 4*(x+1)
+            s = s.replace(/(\d)([a-zA-Z\uE000-\uE020(])/g, '$1*$2');
+            // 2) ')' followed by '(' or variable or number e.g. (a+b)(a-b) -> (a+b)*(a-b)
+            s = s.replace(/\)([a-zA-Z0-9\uE000-\uE020(])/g, ')*$1');
+            // 3) Single variable followed by '(' e.g. x(x+1) -> x*(x+1)
+            s = s.replace(/\b([a-zA-Z])\(/g, '$1*(');
+            // 4) Repeated single-letter variables like xy -> x*y or ab -> a*b
+            while (/\b([a-zA-Z])([a-zA-Z])\b/.test(s)) {
+                s = s.replace(/\b([a-zA-Z])([a-zA-Z])\b/g, '$1*$2');
+            }
+
+            Object.keys(placeholders).forEach(token => {
+                const fn = placeholders[token];
+                s = s.replace(new RegExp(token, 'g'), fn);
+            });
+
+            return s;
+        }
+
+        // Rational Function representation: { num: SymPoly, den: SymPoly, notes: [] }
+        function evalSymbolicAST(exprStr) {
+            const norm = normalizeCasInput(exprStr);
+            const notes = [];
+            let pos = 0;
+
+            function peek() {
+                while (pos < norm.length && /\s/.test(norm[pos])) pos++;
+                return norm[pos] || null;
+            }
+
+            function formatRat(r) {
+                if (r.den.isConstant() && r.den.getConstantFrac().isOne()) {
+                    return r.num.toString();
+                }
+                const nStr = r.num.terms.length > 1 ? `(${r.num.toString()})` : r.num.toString();
+                const dStr = r.den.terms.length > 1 ? `(${r.den.toString()})` : r.den.toString();
+                return `${nStr}/${dStr}`;
+            }
+
+            function parseExpr() {
+                let left = parseTerm();
+                while (true) {
+                    const ch = peek();
+                    if (ch === '+' || ch === '-') {
+                        pos++;
+                        const right = parseTerm();
+                        const leftStr = formatRat(left);
+                        const rightStr = formatRat(right);
+                        // (n1/d1) ± (n2/d2)
+                        if (left.den.sub(right.den).terms.length === 0) {
+                            left = {
+                                num: ch === '+' ? left.num.add(right.num) : left.num.sub(right.num),
+                                den: left.den
+                            };
+                            const combinedStr = formatRat(left);
+                            if (combinedStr !== `${leftStr} ${ch} ${rightStr}`) {
+                                notes.push(`<strong>Gleichartige Terme zusammenfassen:</strong> <code>${leftStr} ${ch} ${rightStr} = ${combinedStr}</code>`);
+                            }
+                        } else {
+                            left = {
+                                num: ch === '+'
+                                    ? left.num.mul(right.den).add(right.num.mul(left.den))
+                                    : left.num.mul(right.den).sub(right.num.mul(left.den)),
+                                den: left.den.mul(right.den)
+                            };
+                            const combinedStr = formatRat(left);
+                            notes.push(`<strong>Auf gleichen Nenner bringen & verrechnen:</strong> <code>${leftStr} ${ch} ${rightStr} = ${combinedStr}</code>`);
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                return left;
+            }
+
+            function parseTerm() {
+                let left = parseFactor();
+                while (true) {
+                    const ch = peek();
+                    if (ch === '*' || ch === '/') {
+                        pos++;
+                        const right = parseFactor();
+                        if (ch === '*') {
+                            left = {
+                                num: left.num.mul(right.num),
+                                den: left.den.mul(right.den)
+                            };
+                        } else {
+                            // Division: (n1/d1) / (n2/d2) = (n1*d2) / (d1*n2)
+                            const newNum = left.num.mul(right.den);
+                            const newDen = left.den.mul(right.num);
+                            if (newDen.isConstant()) {
+                                const c = newDen.getConstantFrac();
+                                const inv = new Frac(c.d, c.n);
+                                left = {
+                                    num: newNum.mul(SymPoly.scalar(inv)),
+                                    den: SymPoly.scalar(new Frac(1, 1))
+                                };
+                            } else {
+                                left = { num: newNum, den: newDen };
+                            }
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                return left;
+            }
+
+            function parseFactor() {
+                const ch = peek();
+                if (ch === '+') {
+                    pos++;
+                    return parseFactor();
+                }
+                if (ch === '-') {
+                    pos++;
+                    const f = parseFactor();
+                    return { num: f.num.mul(SymPoly.scalar(new Frac(-1, 1))), den: f.den };
+                }
+                let base = parsePrimary();
+                if (peek() === '^') {
+                    pos++;
+                    const expVal = parseFactor();
+                    const n = Math.round(expVal.num.getConstantFrac().toDecimal());
+                    const baseStr = formatRat(base);
+                    const hadMultipleOrCoeff = !base.num.isConstant() && (base.num.terms.length > 1 || !base.num.terms[0].coeff.isOne());
+                    if (n >= 0) {
+                        base = { num: base.num.pow(n), den: base.den.pow(n) };
+                    } else {
+                        base = { num: base.den.pow(-n), den: base.num.pow(-n) };
+                    }
+                    if (hadMultipleOrCoeff && n >= 2) {
+                        notes.push(`<strong>Potenz/Klammer ausrechnen:</strong> <code>(${baseStr})^${n} = ${formatRat(base)}</code>`);
+                    }
+                }
+                return base;
+            }
+
+            function parsePrimary() {
+                const ch = peek();
+                if (ch === '(') {
+                    pos++;
+                    const inside = parseExpr();
+                    if (peek() === ')') pos++;
+                    return inside;
+                }
+                // Match number
+                const rest = norm.slice(pos);
+                const numMatch = rest.match(/^(\d+(\.\d+)?)/);
+                if (numMatch) {
+                    pos += numMatch[0].length;
+                    const val = parseFloat(numMatch[0]);
+                    return {
+                        num: SymPoly.scalar(Frac.fromFloat(val)),
+                        den: SymPoly.scalar(new Frac(1, 1))
+                    };
+                }
+                // Match identifier or function
+                const idMatch = rest.match(/^([a-zA-Z_][a-zA-Z0-9_]*)/);
+                if (idMatch) {
+                    const name = idMatch[1];
+                    pos += name.length;
+                    if (peek() === '(') {
+                        pos++; // consume '('
+                        const arg = parseExpr();
+                        if (peek() === ')') pos++;
+                        if (name.toLowerCase() === 'sqrt') {
+                            // Evaluate sqrt(arg.num / arg.den)
+                            const radicandStr = arg.den.isConstant() && arg.den.getConstantFrac().isOne()
+                                ? arg.num.toString()
+                                : `${arg.num.toString()}/${arg.den.toString()}`;
+                            const numSq = simplifySquareRootPoly(arg.num);
+                            const denSq = simplifySquareRootPoly(arg.den);
+                            const resPreview = denSq.poly.isConstant() && denSq.poly.getConstantFrac().isOne()
+                                ? numSq.poly.toString()
+                                : `${numSq.poly.toString()}/${denSq.poly.toString()}`;
+                            notes.push(`<strong>Wurzel ziehen:</strong> Aus <code>√(${radicandStr})</code> wird <code>${resPreview}</code>`);
+                            if (numSq.note) notes.push(numSq.note);
+                            if (denSq.poly.isConstant()) {
+                                const c = denSq.poly.getConstantFrac();
+                                return {
+                                    num: numSq.poly.mul(SymPoly.scalar(new Frac(c.d, c.n))),
+                                    den: SymPoly.scalar(new Frac(1, 1))
+                                };
+                            }
+                            return { num: numSq.poly, den: denSq.poly };
+                        }
+                        return arg;
+                    }
+                    return {
+                        num: SymPoly.variable(name),
+                        den: SymPoly.scalar(new Frac(1, 1))
+                    };
+                }
+                throw new Error('Unerwartetes Zeichen');
+            }
+
+            const result = parseExpr();
+            const simplified = simplifyRationalPoly(result.num, result.den);
+            if (simplified.factorNotes && simplified.factorNotes.length > 0) {
+                notes.push(...simplified.factorNotes);
+            }
+            return { ...simplified, notes };
+        }
+
+        // Simplify algebraic fractions like (a - 1)/(a^2 - 1) -> 1/(a + 1)
+        function simplifyRationalPoly(numPoly, denPoly) {
+            const factorNotes = [];
+            if (denPoly.isConstant()) {
+                const c = denPoly.getConstantFrac();
+                if (c.isOne()) return { num: numPoly, den: denPoly, canceledFactor: null, factorNotes };
+                const inv = new Frac(c.d, c.n);
+                return {
+                    num: numPoly.mul(SymPoly.scalar(inv)),
+                    den: SymPoly.scalar(new Frac(1, 1)),
+                    canceledFactor: null,
+                    factorNotes
+                };
+            }
+            // Check if num == den
+            if (numPoly.sub(denPoly).terms.length === 0) {
+                return { num: SymPoly.scalar(new Frac(1, 1)), den: SymPoly.scalar(new Frac(1, 1)), canceledFactor: numPoly.toString(), factorNotes };
+            }
+            // Factor both numerator and denominator using our algebraic factorizer
+            const numFactors = factorPolyList(numPoly);
+            const denFactors = factorPolyList(denPoly);
+
+            if (numFactors.length > 1) {
+                factorNotes.push(`<strong>Zähler faktorisieren:</strong> <code>${numPoly.toString()} = ${formatFactorList(numFactors)}</code>`);
+            }
+            if (denFactors.length > 1) {
+                factorNotes.push(`<strong>Nenner mit binomischer Formel zerlegen:</strong> <code>${denPoly.toString()} = ${formatFactorList(denFactors)}</code>`);
+            }
+
+            let canceled = null;
+            for (let i = 0; i < numFactors.length; i++) {
+                for (let j = 0; j < denFactors.length; j++) {
+                    if (!numFactors[i] || !denFactors[j]) continue;
+                    if (numFactors[i].sub(denFactors[j]).terms.length === 0 && !numFactors[i].isConstant()) {
+                        canceled = numFactors[i].toString();
+                        numFactors[i] = null;
+                        denFactors[j] = null;
+                        break;
+                    }
+                }
+            }
+
+            let finalNum = SymPoly.scalar(new Frac(1, 1));
+            numFactors.filter(Boolean).forEach(f => { finalNum = finalNum.mul(f); });
+
+            let finalDen = SymPoly.scalar(new Frac(1, 1));
+            denFactors.filter(Boolean).forEach(f => { finalDen = finalDen.mul(f); });
+
+            return { num: finalNum, den: finalDen, canceledFactor: canceled, factorNotes };
+        }
+
+        // Decompose a polynomial into a list of irreducible SymPoly factors
+        function factorPolyList(poly) {
+            poly.sortTerms();
+            if (poly.terms.length <= 1) return [poly];
+
+            // 1. Perfect square trinomial: A^2 ± 2AB + B^2 -> [A ± B, A ± B]
+            const sqRoot = tryPerfectSquareTrinomial(poly);
+            if (sqRoot) {
+                return [sqRoot, sqRoot];
+            }
+
+            // 2. Difference of two squares (3. Binomische Formel): A^2 - B^2 -> [A - B, A + B]
+            if (poly.terms.length === 2) {
+                const t1 = poly.terms[0];
+                const t2 = poly.terms[1];
+                if (t1.coeff.n * t2.coeff.n < 0 && !t1.rad && !t2.rad) {
+                    const posT = t1.coeff.n > 0 ? t1 : t2;
+                    const negT = t1.coeff.n > 0 ? t2 : t1;
+                    const allEven1 = Object.values(posT.vars).every(e => e % 2 === 0);
+                    const allEven2 = Object.values(negT.vars).every(e => e % 2 === 0);
+                    const sqN1 = Math.round(Math.sqrt(posT.coeff.n)), sqD1 = Math.round(Math.sqrt(posT.coeff.d));
+                    const absN2 = Math.abs(negT.coeff.n);
+                    const sqN2 = Math.round(Math.sqrt(absN2)), sqD2 = Math.round(Math.sqrt(negT.coeff.d));
+
+                    if (allEven1 && allEven2 && sqN1 * sqN1 === posT.coeff.n && sqD1 * sqD1 === posT.coeff.d &&
+                        sqN2 * sqN2 === absN2 && sqD2 * sqD2 === negT.coeff.d) {
+                        const v1 = {}, v2 = {};
+                        Object.keys(posT.vars).forEach(k => { v1[k] = posT.vars[k] / 2; });
+                        Object.keys(negT.vars).forEach(k => { v2[k] = negT.vars[k] / 2; });
+                        const A = new SymPoly([{ coeff: new Frac(sqN1, sqD1), vars: v1, rad: null }]);
+                        const B = new SymPoly([{ coeff: new Frac(sqN2, sqD2), vars: v2, rad: null }]);
+                        return [A.sub(B), A.add(B)];
+                    }
+                }
+            }
+
+            return [poly];
+        }
+
+        function formatFactorList(factors) {
+            if (factors.length === 1) return factors[0].toString();
+            if (factors.length === 2 && factors[0].sub(factors[1]).terms.length === 0) {
+                return `(${factors[0].toString()})^2`;
+            }
+            return factors.map(f => f.terms.length > 1 ? `(${f.toString()})` : f.toString()).join('·');
+        }
+
+        /***********************************************************************
+         * 4. CORE CAS EVALUATION ENGINE + STEP-BY-STEP EXPLANATION GENERATOR
+         ***********************************************************************/
+        function evaluateCasExpression(rawInput, preferDecimal = false) {
+            let cleanedRaw = rawInput.trim();
+            if (!cleanedRaw) {
+                return { output: '', decimalOutput: null, steps: [] };
+            }
+
+            const steps = [];
+
+            // Tolerant Check 1: Did the user put a trailing '=' at the end (like 'a^4+a^4=')?
+            if (cleanedRaw.endsWith('=') && !cleanedRaw.endsWith(':=') && (cleanedRaw.match(/=/g) || []).length === 1) {
+                cleanedRaw = cleanedRaw.slice(0, -1).trim();
+                steps.push(`<strong>Hinweis zur Eingabe:</strong> Das <code>=</code> ganz am Ende wurde automatisch entfernt. Auf dem TI-Nspire CAS tippst du den Term ohne <code>=</code> ein und drückst direkt <strong>enter</strong>.`);
+            }
+
+            try {
+                // -------------------------------------------------------------
+                // CASE A: Variable or Function Assignment with ':='
+                // -------------------------------------------------------------
+                if (cleanedRaw.includes(':=')) {
+                    const parts = cleanedRaw.split(':=');
+                    const lhs = parts[0].trim();
+                    const rhs = parts.slice(1).join(':=').trim();
+
+                    const fnMatch = lhs.match(/^([a-zA-Z][a-zA-Z0-9_]*)\(([a-zA-Z])\)$/);
+                    if (fnMatch) {
+                        const fnName = fnMatch[1];
+                        casMemory.functions[fnName] = rhs;
+                        updateGlobalVarBadge();
+                        syncFunctionInputs();
+
+                        let expandedRhs = rhs;
+                        try {
+                            const astRes = evalSymbolicAST(rhs);
+                            expandedRhs = astRes.den.isConstant() && astRes.den.getConstantFrac().isOne()
+                                ? astRes.num.toString()
+                                : `(${astRes.num.toString()})/(${astRes.den.toString()})`;
+                        } catch (e) {}
+
+                        steps.push(`Funktion <strong>${lhs}</strong> global im CAS-Speicher hinterlegt.`);
+                        steps.push(`Klammerform: <code>${lhs} = ${rhs}</code>`);
+                        if (expandedRhs && expandedRhs !== rhs) {
+                            steps.push(`Ausmultiplizierte Form: <code>${lhs} = ${expandedRhs}</code>`);
+                        }
+                        return { output: `Fertig (${lhs} := ${rhs})`, steps };
+                    } else {
+                        const varName = lhs;
+                        const evalVal = evaluateCasExpression(rhs, preferDecimal).output;
+                        casMemory.variables[varName] = evalVal;
+                        updateGlobalVarBadge();
+                        steps.push(`Variable <strong>${varName}</strong> im globalen CAS-Speicher auf <code>${evalVal}</code> gesetzt.`);
+                        return { output: evalVal, steps };
+                    }
+                }
+
+                // Substitute stored functions f1(x), f2(x) if referenced
+                let workingExpr = cleanedRaw;
+                Object.keys(casMemory.functions).forEach(fnName => {
+                    const fnBody = casMemory.functions[fnName];
+                    const regex = new RegExp(`\\b${fnName}\\(([^)]+)\\)`, 'g');
+                    workingExpr = workingExpr.replace(regex, (_, arg) => {
+                        return `((${fnBody.replace(/\bx\b/g, `(${arg})`)}))`;
+                    });
+                });
+
+                const normalized = normalizeCasInput(workingExpr);
+
+                // -------------------------------------------------------------
+                // CASE B: solve(...) - Tolerant of missing '= 0' or missing ', x'!
+                // -------------------------------------------------------------
+                const solveWrapperMatch = normalized.match(/^solve\((.+)\)$/i);
+                if (solveWrapperMatch) {
+                    const innerSolve = solveWrapperMatch[1].trim();
+                    // Check if comma with variable is given: solve(eq, var)
+                    const commaParts = innerSolve.split(',');
+                    let eqPart = innerSolve;
+                    let variable = null;
+                    if (commaParts.length >= 2) {
+                        variable = commaParts[commaParts.length - 1].trim();
+                        eqPart = commaParts.slice(0, -1).join(',').trim();
+                    } else {
+                        // Auto-detect variable (first letter variable in expression)
+                        const varMatch = eqPart.match(/\b([a-zA-Z])\b/);
+                        variable = varMatch ? varMatch[1] : 'x';
+                    }
+
+                    // If user typed solve(a^4+a^4) WITHOUT an '=' sign:
+                    if (!eqPart.includes('=')) {
+                        const simplified = evaluateCasExpression(eqPart, preferDecimal);
+                        steps.push(`<strong>Hinweis zu solve( ):</strong> Du hast <code>solve(${eqPart})</code> ohne Gleichheitszeichen <code>=</code> eingegeben.`);
+                        steps.push(`<strong>1. Term vereinfacht (ohne solve):</strong> <code>${eqPart} = ${simplified.output}</code>`);
+                        const zeroSol = solveEquationWithSteps(`${eqPart} = 0`, variable);
+                        steps.push(`<strong>2. Falls die Gleichung ${eqPart} = 0 gemeint war:</strong> <code>${zeroSol.output}</code>`);
+                        return {
+                            output: `${simplified.output}   (für = 0: ${zeroSol.output})`,
+                            steps
+                        };
+                    }
+
+                    return solveEquationWithSteps(eqPart, variable);
+                }
+
+                // Direct equation with '=' without solve(...) wrapper -> auto-solve!
+                if (normalized.includes('=') && !normalized.startsWith('expand') && !normalized.startsWith('factor')) {
+                    const varMatch = normalized.match(/\b([a-zA-Z])\b/);
+                    const autoVar = varMatch ? varMatch[1] : 'x';
+                    return solveEquationWithSteps(normalized, autoVar);
+                }
+
+                // -------------------------------------------------------------
+                // CASE C: factor(expr) - Factorization & Reverse Binomials
+                // -------------------------------------------------------------
+                const factorMatch = normalized.match(/^factor\((.+)\)$/i);
+                if (factorMatch) {
+                    const inner = factorMatch[1];
+                    const astRes = evalSymbolicAST(inner);
+                    const factors = factorPolyList(astRes.num);
+                    let factoredStr = formatFactorList(factors);
+
+                    // Fallback to Algebrite if loaded and our factorizer had 1 factor
+                    if (factors.length === 1 && typeof Algebrite !== 'undefined') {
+                        try {
+                            const algFac = Algebrite.run(`factor(${inner})`).toString();
+                            if (algFac && !algFac.includes('Stop')) factoredStr = algFac;
+                        } catch (e) {}
+                    }
+
+                    steps.push(`<strong>1. Ausgangsterm analysieren:</strong> <code>${inner}</code>`);
+                    if (inner.includes('-') && !inner.includes('+')) {
+                        steps.push(`<strong>2. Prüfe 3. Binomische Formel a² − b² = (a − b)(a + b):</strong> Wurzel aus dem ersten und zweiten Quadratterm ziehen.`);
+                    } else {
+                        steps.push(`<strong>2. Prüfe 1./2. Binomische Formel a² ± 2ab + b² = (a ± b)²:</strong> Prüfe Quadratglieder und doppeltes Produkt.`);
+                    }
+                    steps.push(`<strong>3. Faktorisierte Form:</strong> <code>${factoredStr}</code>`);
+
+                    return { output: factoredStr, steps };
+                }
+
+                // -------------------------------------------------------------
+                // CASE D: expand(expr) or General Symbolic Expression
+                // -------------------------------------------------------------
+                const expandMatch = normalized.match(/^expand\((.+)\)$/i);
+                const targetExpr = expandMatch ? expandMatch[1] : normalized;
+
+                const binomialSteps = generateBinomialSteps(targetExpr);
+                if (binomialSteps.length > 0) {
+                    steps.push(...binomialSteps);
+                }
+
+                const astRes = evalSymbolicAST(targetExpr);
+                if (astRes.notes && astRes.notes.length > 0) {
+                    astRes.notes.forEach(n => steps.push(n));
+                }
+                if (astRes.canceledFactor) {
+                    steps.push(`<strong>Bruchterme kürzen:</strong> Gemeinsamer Faktor <code>(${astRes.canceledFactor})</code> im Zähler und Nenner gekürzt!`);
+                }
+
+                let finalOut = '';
+                let decOut = null;
+
+                if (astRes.den.isConstant() && astRes.den.getConstantFrac().isOne()) {
+                    finalOut = astRes.num.toString(preferDecimal);
+                    if (astRes.num.isConstant()) {
+                        const c = astRes.num.getConstantFrac();
+                        if (c.d !== 1) {
+                            decOut = String(Number(c.toDecimal().toFixed(6)));
+                        }
+                    }
+                } else {
+                    const numStr = astRes.num.terms.length > 1 ? `(${astRes.num.toString(preferDecimal)})` : astRes.num.toString(preferDecimal);
+                    const denStr = astRes.den.terms.length > 1 ? `(${astRes.den.toString(preferDecimal)})` : astRes.den.toString(preferDecimal);
+                    finalOut = `${numStr}/${denStr}`;
+                }
+
+                if (steps.length === 0) {
+                    steps.push(`<strong>1. Eingabe erkannt:</strong> <code>${targetExpr}</code>`);
+                    steps.push(`<strong>2. Gleichartige Terme / Potenzen zusammenfassen:</strong> Ergibt <code>${finalOut}</code>.`);
+                }
+
+                return {
+                    output: preferDecimal && decOut ? decOut : finalOut,
+                    exactOutput: finalOut,
+                    decimalOutput: decOut,
+                    steps
+                };
+
+            } catch (err) {
+                return {
+                    output: 'Syntaxfehler: Bitte Klammern oder Befehl prüfen',
+                    steps: ['Tipp: Gib Terme direkt ein wie a^4+a^4, sqrt((6a)^2+(8a)^2) oder (a-1)/(a^2-1)']
+                };
+            }
+        }
+
+        /***********************************************************************
+         * 5. STEP-BY-STEP BINOMIAL FORMULA EXPLAINER (1., 2. & 3. Binom)
+         ***********************************************************************/
+        function generateBinomialSteps(expr) {
+            const s = expr.replace(/\s+/g, '');
+            const steps = [];
+
+            const sqMatch = s.match(/^\(([^()+]+)(\+|-)([^()+-]+)\)\^2$/);
+            if (sqMatch) {
+                const A = sqMatch[1];
+                const op = sqMatch[2];
+                const B = sqMatch[3];
+                const isPlus = op === '+';
+                const formulaName = isPlus ? '1. Binomische Formel: (a + b)² = a² + 2·a·b + b²' : '2. Binomische Formel: (a − b)² = a² − 2·a·b + b²';
+
+                const a2 = evalSymbolicAST(`(${A})^2`).num.toString();
+                const twoAB = evalSymbolicAST(`2*(${A})*(${B})`).num.toString();
+                const b2 = evalSymbolicAST(`(${B})^2`).num.toString();
+                const finalRes = evalSymbolicAST(s).num.toString();
+
+                steps.push(`<strong>Erkannt: ${formulaName}</strong>`);
+                steps.push(`<strong>Schritt 1 (a und b bestimmen):</strong> Hier ist <code>a = ${A}</code> und <code>b = ${B}</code>.`);
+                steps.push(`<strong>Schritt 2 (In Formel einsetzen):</strong> <code>(${A})² ${isPlus ? '+' : '−'} 2 · (${A}) · (${B}) + (${B})²</code>`);
+                steps.push(`<strong>Schritt 3 (Einzelteile ausrechnen):</strong> <code>a² = ${a2}</code> | Doppeltes Produkt: <code>2ab = ${twoAB}</code> | <code>b² = ${b2}</code>`);
+                steps.push(`<strong>Schritt 4 (Zusammenfassen):</strong> <code>${finalRes}</code>`);
+                return steps;
+            }
+
+            const thirdMatch = s.match(/^\(([^()+]+)(\+|-)([^()+-]+)\)\*\(([^()+]+)(\+|-)([^()+-]+)\)$/);
+            if (thirdMatch) {
+                const A1 = thirdMatch[1], op1 = thirdMatch[2], B1 = thirdMatch[3];
+                const A2 = thirdMatch[4], op2 = thirdMatch[5], B2 = thirdMatch[6];
+                if (A1 === A2 && B1 === B2 && op1 !== op2) {
+                    const a2 = evalSymbolicAST(`(${A1})^2`).num.toString();
+                    const b2 = evalSymbolicAST(`(${B1})^2`).num.toString();
+                    steps.push(`<strong>Erkannt: 3. Binomische Formel: (a + b)·(a − b) = a² − b²</strong>`);
+                    steps.push(`<strong>Schritt 1 (a und b bestimmen):</strong> <code>a = ${A1}</code> und <code>b = ${B1}</code>.`);
+                    steps.push(`<strong>Schritt 2 (Mittelterm hebt sich auf):</strong> <code>+ (${A1})·(${B1}) − (${A1})·(${B1}) = 0</code>`);
+                    steps.push(`<strong>Schritt 3 (Quadrate subtrahieren):</strong> <code>(${A1})² − (${B1})² = ${a2} - ${b2}</code>`);
+                    return steps;
+                }
+            }
+
+            return steps;
+        }
+
+        /***********************************************************************
+         * 6. SYMBOLIC EQUATION SOLVER WITH STEPS (Linear, Quadratic & Power)
+         ***********************************************************************/
+        function solveEquationWithSteps(eqStr, variable) {
+            const steps = [];
+            const sides = eqStr.split('=');
+            const lhs = sides[0] ? sides[0].trim() : '0';
+            const rhs = sides[1] ? sides[1].trim() : '0';
+
+            steps.push(`<strong>1. Ausgangsgleichung:</strong> <code>${lhs} = ${rhs}</code>`);
+
+            const lhsPoly = evalSymbolicAST(lhs).num;
+            const rhsPoly = evalSymbolicAST(rhs).num;
+            steps.push(`<strong>2. Beide Seiten vereinfachen:</strong> <code>${lhsPoly.toString()} = ${rhsPoly.toString()}</code>`);
+
+            const diffPoly = lhsPoly.sub(rhsPoly);
+            steps.push(`<strong>3. Alles auf eine Seite bringen (= 0):</strong> <code>${diffPoly.toString()} = 0</code>`);
+
+            // Extract coefficients of variable
+            let c0 = new Frac(0, 1);
+            let c1 = new Frac(0, 1);
+            let c2 = new Frac(0, 1);
+            let higherExp = 0;
+            let cHigher = new Frac(0, 1);
+
+            diffPoly.terms.forEach(t => {
+                const exp = t.vars[variable] || 0;
+                if (exp === 0) c0 = c0.add(t.coeff);
+                else if (exp === 1) c1 = c1.add(t.coeff);
+                else if (exp === 2) c2 = c2.add(t.coeff);
+                else {
+                    higherExp = exp;
+                    cHigher = cHigher.add(t.coeff);
+                }
+            });
+
+            // Pure power equation: cHigher * a^n + c0 = 0
+            if (higherExp > 2 && c1.isZero() && c2.isZero()) {
+                const rhsVal = c0.neg().div(cHigher).toDecimal();
+                if (higherExp % 2 === 0 && rhsVal < 0) {
+                    return { output: 'Keine reelle Lösung (false)', steps };
+                }
+                const rootVal = Math.pow(Math.abs(rhsVal), 1 / higherExp);
+                const cleanRoot = Number(rootVal.toFixed(6));
+                const out = higherExp % 2 === 0 && cleanRoot !== 0
+                    ? `${variable} = -${cleanRoot}  oder  ${variable} = ${cleanRoot}`
+                    : `${variable} = ${rhsVal < 0 ? -cleanRoot : cleanRoot}`;
+                steps.push(`<strong>4. Wurzel ziehen (${higherExp}. Potenz):</strong> <code>${out}</code>`);
+                return { output: out, steps };
+            }
+
+            // Linear equation: c1 * x + c0 = 0
+            if (c2.isZero() && !c1.isZero()) {
+                const sol = c0.neg().div(c1);
+                const out = `${variable} = ${sol.toString()}`;
+                steps.push(`<strong>4. Nach ${variable} auflösen:</strong> <code>${out}</code>`);
+                return { output: out, steps };
+            }
+
+            // Quadratic equation: c2 * x^2 + c1 * x + c0 = 0
+            if (!c2.isZero()) {
+                const A = c2.toDecimal(), B = c1.toDecimal(), C = c0.toDecimal();
+                const disc = B * B - 4 * A * C;
+                if (disc < -1e-12) {
+                    return { output: 'Keine reelle Lösung (false)', steps };
+                }
+                if (Math.abs(disc) <= 1e-12) {
+                    const x0 = Frac.fromFloat(-B / (2 * A));
+                    const out = `${variable} = ${x0.toString()}`;
+                    steps.push(`<strong>4. Doppelte Nullstelle:</strong> <code>${out}</code>`);
+                    return { output: out, steps };
+                }
+                const x1 = Frac.fromFloat((-B - Math.sqrt(disc)) / (2 * A));
+                const x2 = Frac.fromFloat((-B + Math.sqrt(disc)) / (2 * A));
+                const out = `${variable} = ${x1.toString()}  oder  ${variable} = ${x2.toString()}`;
+                steps.push(`<strong>4. Lösungsmenge bestimmen:</strong> <code>${out}</code>`);
+                return { output: out, steps };
+            }
+
+            return { output: `${variable} = 0`, steps };
+        }
+
+        /***********************************************************************
+         * 7. VIEW 1: CALCULATOR UI & INTERACTION
+         ***********************************************************************/
+        const calcInput = document.getElementById('calc-main-input');
+        const calcHistoryContainer = document.getElementById('calc-history-list');
+
+        if (calcInput) {
+            calcInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    evaluateCalcInput(e.ctrlKey || e.metaKey);
+                }
+            });
+        }
+
+        function evaluateCalcInput(preferDecimal = false) {
+            const raw = calcInput.value.trim();
+            if (!raw) return;
+            addCalcEntry(raw, preferDecimal);
+            calcInput.value = '';
+            calcInput.focus();
+        }
+
+        function runDirectDemo(expr) {
+            switchTab('calc');
+            addCalcEntry(expr, false);
+        }
+
+        function insertBinomTemplate(templateExpr) {
+            if (currentTab === 'home' || currentTab === 'graphs' || currentTab === 'lists') {
+                switchTab('calc');
+            }
+            const target = (currentTab === 'notes' && activeInputElement && activeInputElement.classList.contains('notes-math-input'))
+                ? activeInputElement
+                : calcInput;
+            target.value = templateExpr;
+            target.focus();
+            // Select inner term so user can immediately edit or press Enter
+            const openParen = templateExpr.indexOf('(');
+            if (openParen !== -1) {
+                target.setSelectionRange(openParen + 1, templateExpr.length - 1);
+            }
+        }
+
+        let calcStepCounter = 0;
+
+        function addCalcEntry(rawExpr, preferDecimal = false) {
+            calcStepCounter++;
+            const entryIndex = savedCalcEntries.length;
+            savedCalcEntries.push({ rawExpr, preferDecimal });
+
+            const res = evaluateCasExpression(rawExpr, preferDecimal);
+            const stepId = `calc-step-${calcStepCounter}`;
+            const outId = `calc-out-${calcStepCounter}`;
+            const cardId = `calc-card-${calcStepCounter}`;
+
+            const item = document.createElement('div');
+            item.id = cardId;
+            item.className = 'border border-slate-200 rounded-xl p-3 bg-slate-50/70 hover:bg-slate-50 transition shadow-sm';
+
+            const stepsHtml = res.steps.map((s, idx) => `<div class="py-0.5 flex items-start gap-2"><span class="bg-amber-500 text-white font-bold text-[10px] px-1.5 py-0.2 rounded-full shrink-0 mt-0.5">${idx + 1}</span><div>${s}</div></div>`).join('');
+            const toggleBtnHtml = res.decimalOutput
+                ? `<button onclick="toggleEntryFractionDecimal('${outId}', '${escapeQuotes(res.exactOutput)}', '≈ ${escapeQuotes(res.decimalOutput)}')" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-bold px-2 py-1 rounded-lg transition" title="Zwischen Bruch und Dezimalzahl umschalten">⇄ a/b | ≈</button>`
+                : '';
+
+            item.innerHTML = `
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[11px] font-mono text-slate-400 select-none">#${calcStepCounter}</span>
+                        <span class="cas-mono text-sm text-slate-800 font-medium">${escapeHtml(rawExpr)}</span>
+                    </div>
+                    <div class="flex items-center justify-end space-x-2">
+                        ${toggleBtnHtml}
+                        <span id="${outId}" data-mode="${preferDecimal ? 'dec' : 'exact'}" class="cas-mono text-base sm:text-lg font-extrabold text-blue-800 bg-blue-50 border border-blue-200 px-3 py-1 rounded-lg">
+                            ${escapeHtml(res.output)}
+                        </span>
+                        <button onclick="removeSingleCalcEntry('${cardId}', ${entryIndex})" class="text-slate-400 hover:text-red-600 px-1.5 py-1 text-xs transition" title="Diesen Eintrag entfernen">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- Lösungsweg ist jetzt standardmässig direkt sichtbar! -->
+                <div id="${stepId}" class="mt-2.5 bg-amber-50/90 border-l-4 border-amber-500 rounded-r-lg p-3 text-xs text-slate-800 space-y-1.5 shadow-sm">
+                    <div class="font-bold text-amber-900 flex items-center justify-between">
+                        <span><i class="fa-solid fa-graduation-cap mr-1"></i> Schritt-für-Schritt Lösungsweg:</span>
+                    </div>
+                    ${stepsHtml}
+                </div>
+                <div class="mt-2 pt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <button onclick="document.getElementById('${stepId}').classList.toggle('hidden')" class="text-slate-500 hover:text-blue-800 font-medium flex items-center gap-1">
+                        <i class="fa-solid fa-eye-slash"></i> Lösungsweg ein-/ausblenden
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="copyToMainInput('${escapeQuotes(rawExpr)}')" class="text-slate-600 hover:text-slate-900 px-2 py-0.5 rounded bg-slate-200/70" title="Eingabe erneut bearbeiten">
+                            Eingabe übernehmen
+                        </button>
+                        <button onclick="copyToMainInput('${escapeQuotes(res.output)}')" class="text-slate-600 hover:text-slate-900 px-2 py-0.5 rounded bg-slate-200/70" title="Ergebnis weiterverwenden">
+                            Resultat übernehmen
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            calcHistoryContainer.appendChild(item);
+            calcHistoryContainer.scrollTop = calcHistoryContainer.scrollHeight;
+            saveSimulatorState();
+        }
+
+        function removeSingleCalcEntry(cardId, entryIdx) {
+            const el = document.getElementById(cardId);
+            if (el) el.remove();
+            if (savedCalcEntries[entryIdx]) {
+                savedCalcEntries[entryIdx] = null;
+            }
+            savedCalcEntries = savedCalcEntries.filter(Boolean);
+            saveSimulatorState();
+        }
+
+        function toggleEntryFractionDecimal(elId, exactStr, decStr) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            if (el.dataset.mode === 'exact') {
+                el.textContent = decStr;
+                el.dataset.mode = 'dec';
+            } else {
+                el.textContent = exactStr;
+                el.dataset.mode = 'exact';
+            }
+        }
+
+        function copyToMainInput(txt) {
+            calcInput.value = txt;
+            calcInput.focus();
+        }
+
+        function clearCalcHistory() {
+            calcHistoryContainer.innerHTML = '';
+            calcStepCounter = 0;
+            savedCalcEntries = [];
+            saveSimulatorState();
+        }
+
+        function loadWorksheetTasks(clearFirst = false) {
+            if (clearFirst) clearCalcHistory();
+            addCalcEntry('a^4 + a^4');
+            addCalcEntry('sqrt((6a)^2 + (8a)^2)');
+            addCalcEntry('sqrt(1 - 9/25)');
+            addCalcEntry('sqrt(4a) + sqrt(9a)');
+            addCalcEntry('sqrt(a^2 + 4a + 4)');
+            addCalcEntry('(a - 1)/(a^2 - 1)');
+        }
+
+        function loadSampleBinomialCalculations(clearFirst = false) {
+            if (clearFirst) clearCalcHistory();
+            addCalcEntry('expand((a + b)^2)');
+            addCalcEntry('expand((3x - 4y)^2)');
+            addCalcEntry('factor(25a^2 - 36b^2)');
+            addCalcEntry('solve((x + 3)^2 = x^2 + 21, x)');
+        }
+
+        function insertAtCursor(prefix, suffix) {
+            const target = activeInputElement || calcInput;
+            const start = target.selectionStart || target.value.length;
+            const end = target.selectionEnd || target.value.length;
+            const text = target.value;
+            const selected = text.substring(start, end);
+            target.value = text.substring(0, start) + prefix + selected + suffix + text.substring(end);
+            target.focus();
+            const cursorPos = start + prefix.length + selected.length;
+            target.selectionStart = target.selectionEnd = cursorPos;
+        }
+
+        function insertCommand(exampleCmd, runImmediately) {
+            document.getElementById('cas-menu-dropdown').classList.add('hidden');
+            calcInput.value = exampleCmd;
+            if (runImmediately) {
+                evaluateCalcInput();
+            } else {
+                calcInput.focus();
+            }
+        }
+
+        function toggleCasMenu() {
+            document.getElementById('cas-menu-dropdown').classList.toggle('hidden');
+        }
+
+        /***********************************************************************
+         * 7. VIEW 2: NOTES APPLICATION ("RECHNEN IN DER APPLIKATION NOTES")
+         ***********************************************************************/
+        const notesContainer = document.getElementById('notes-container');
+        let notesBoxCounter = 0;
+
+        function resetNotesToBinomialTemplate() {
+            notesContainer.innerHTML = '';
+            notesBoxCounter = 0;
+
+            addNotesHeaderBlock(
+                'Prüfungstraining: Binomische Formeln & Gleichungen in „Notes“',
+                'In der TI-Nspire Applikation „Notes“ kannst du Erklärungen schreiben und direkt darunter in sogenannten Math-Boxen (rot/blau umrandet) live mit dem CAS rechnen. Klicke in eine Box, ändere die Zahlen und drücke ENTER!'
+            );
+
+            addNotesTextBlock('1. Binomische Formeln ausmultiplizieren mit expand( )');
+            addNotesMathBox('expand((3x - 4y)^2)');
+            addNotesMathBox('expand((1/2*a + 4b)*(1/2*a - 4b))');
+
+            addNotesTextBlock('2. Rückwärts rechnen (Faktorisieren) mit factor( )');
+            addNotesMathBox('factor(9x^2 - 30xy + 25y^2)');
+            addNotesMathBox('factor(x^2 - 9)');
+
+            addNotesTextBlock('3. Prüfungs-Gleichungen direkt nach x auflösen mit solve( )');
+            addNotesMathBox('solve((x + 3)^2 = x^2 + 21, x)');
+
+            addNotesTextBlock('4. Vernetztes Arbeiten: Funktion f1(x) definieren (automatisch mit Graphs & Tabelle verbunden!)');
+            addNotesMathBox('f1(x) := (x - 2)^2 - 4');
+            addNotesMathBox('solve(f1(x) = 0, x)');
+        }
+
+        function addNotesHeaderBlock(title, subtitle) {
+            const div = document.createElement('div');
+            div.className = 'bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl';
+            div.dataset.noteType = 'header';
+            div.dataset.title = title;
+            div.dataset.subtitle = subtitle;
+            div.innerHTML = `
+                <h2 class="font-extrabold text-base sm:text-lg text-slate-900">${escapeHtml(title)}</h2>
+                <p class="text-xs text-slate-700 mt-1 leading-relaxed">${escapeHtml(subtitle)}</p>
+            `;
+            notesContainer.appendChild(div);
+            saveSimulatorState();
+        }
+
+        function addNotesTextBlock(initialText = 'Eigene Notiz oder Merksatz hier eingeben...') {
+            const div = document.createElement('div');
+            div.className = 'group relative pt-1';
+            div.dataset.noteType = 'text';
+            div.innerHTML = `
+                <div contenteditable="true" oninput="saveSimulatorState()" class="outline-none font-bold text-sm text-slate-800 bg-slate-100/80 focus:bg-white border border-transparent focus:border-slate-300 rounded-lg px-3 py-2 transition">
+                    ${escapeHtml(initialText)}
+                </div>
+            `;
+            notesContainer.appendChild(div);
+            saveSimulatorState();
+        }
+
+        function addNotesMathBox(initialExpr = 'expand((a + b)^2)') {
+            notesBoxCounter++;
+            const boxId = `notes-math-${notesBoxCounter}`;
+            const res = evaluateCasExpression(initialExpr);
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'math-box p-3 shadow-sm';
+            wrapper.id = `${boxId}-wrapper`;
+
+            const stepsHtml = res.steps.map(s => `<div>• ${s}</div>`).join('');
+
+            wrapper.innerHTML = `
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <div class="flex items-center gap-1.5 flex-1">
+                        <span class="bg-red-600 text-white font-mono font-bold text-[10px] px-1.5 py-0.5 rounded select-none">CAS</span>
+                        <input id="${boxId}-input" type="text" value="${escapeQuotes(initialExpr)}"
+                            oninput="saveSimulatorState()"
+                            onkeydown="if(event.key==='Enter'){ event.preventDefault(); evaluateSingleMathBox('${boxId}'); }"
+                            class="notes-math-input flex-1 bg-transparent cas-mono text-sm sm:text-base font-semibold text-slate-900 outline-none border-b border-dashed border-slate-400 focus:border-blue-600 pb-0.5"
+                            placeholder="CAS-Ausdruck eingeben...">
+                    </div>
+                    <div class="flex items-center justify-between sm:justify-end gap-2">
+                        <span class="text-slate-400 font-bold">⇒</span>
+                        <span id="${boxId}-output" class="cas-mono text-sm sm:text-base font-extrabold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-3 py-1 rounded-lg">
+                            ${escapeHtml(res.output)}
+                        </span>
+                        <button onclick="evaluateSingleMathBox('${boxId}')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-sm" title="Neu berechnen (Enter)">
+                            ↵
+                        </button>
+                        <button onclick="document.getElementById('${boxId}-steps').classList.toggle('hidden')" class="bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-bold px-2 py-1.5 rounded-lg" title="Zwischenschritte ein-/ausblenden">
+                            <i class="fa-solid fa-graduation-cap"></i> Schritte
+                        </button>
+                        <button onclick="document.getElementById('${boxId}-wrapper').remove(); saveSimulatorState();" class="text-slate-400 hover:text-red-600 px-1.5" title="Math-Box löschen">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="${boxId}-steps" class="mt-2 pt-2 border-t border-amber-300/80 text-xs text-slate-700 space-y-1">
+                    ${stepsHtml}
+                </div>
+            `;
+
+            notesContainer.appendChild(wrapper);
+            const inputEl = document.getElementById(`${boxId}-input`);
+            if (inputEl) activeInputElement = inputEl;
+            saveSimulatorState();
+        }
+
+        function evaluateSingleMathBox(boxId) {
+            const inputEl = document.getElementById(`${boxId}-input`);
+            const outputEl = document.getElementById(`${boxId}-output`);
+            const stepsEl = document.getElementById(`${boxId}-steps`);
+            if (!inputEl || !outputEl) return;
+
+            const res = evaluateCasExpression(inputEl.value);
+            outputEl.textContent = res.output;
+            stepsEl.innerHTML = res.steps.map(s => `<div>• ${s}</div>`).join('');
+            saveSimulatorState();
+        }
+
+        function addNotesTextBlock(initialText = 'Eigene Notiz oder Merksatz hier eingeben...') {
+            const div = document.createElement('div');
+            div.className = 'group relative pt-1';
+            div.innerHTML = `
+                <div contenteditable="true" class="outline-none font-bold text-sm text-slate-800 bg-slate-100/80 focus:bg-white border border-transparent focus:border-slate-300 rounded-lg px-3 py-2 transition">
+                    ${escapeHtml(initialText)}
+                </div>
+            `;
+            notesContainer.appendChild(div);
+        }
+
+        function addNotesMathBox(initialExpr = 'expand((a + b)^2)') {
+            notesBoxCounter++;
+            const boxId = `notes-math-${notesBoxCounter}`;
+            const res = evaluateCasExpression(initialExpr);
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'math-box p-3 shadow-sm';
+            wrapper.id = `${boxId}-wrapper`;
+
+            const stepsHtml = res.steps.map(s => `<div>• ${s}</div>`).join('');
+
+            wrapper.innerHTML = `
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <div class="flex items-center gap-1.5 flex-1">
+                        <span class="bg-red-600 text-white font-mono font-bold text-[10px] px-1.5 py-0.5 rounded select-none">CAS</span>
+                        <input id="${boxId}-input" type="text" value="${escapeQuotes(initialExpr)}"
+                            onkeydown="if(event.key==='Enter'){ event.preventDefault(); evaluateSingleMathBox('${boxId}'); }"
+                            class="notes-math-input flex-1 bg-transparent cas-mono text-sm sm:text-base font-semibold text-slate-900 outline-none border-b border-dashed border-slate-400 focus:border-blue-600 pb-0.5"
+                            placeholder="CAS-Ausdruck eingeben...">
+                    </div>
+                    <div class="flex items-center justify-between sm:justify-end gap-2">
+                        <span class="text-slate-400 font-bold">⇒</span>
+                        <span id="${boxId}-output" class="cas-mono text-sm sm:text-base font-extrabold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-3 py-1 rounded-lg">
+                            ${escapeHtml(res.output)}
+                        </span>
+                        <button onclick="evaluateSingleMathBox('${boxId}')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-sm" title="Neu berechnen (Enter)">
+                            ↵
+                        </button>
+                        <button onclick="document.getElementById('${boxId}-steps').classList.toggle('hidden')" class="bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-bold px-2 py-1.5 rounded-lg" title="Zwischenschritte ein-/ausblenden">
+                            <i class="fa-solid fa-graduation-cap"></i> Schritte
+                        </button>
+                        <button onclick="document.getElementById('${boxId}-wrapper').remove()" class="text-slate-400 hover:text-red-600 px-1.5" title="Math-Box löschen">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="${boxId}-steps" class="mt-2 pt-2 border-t border-amber-300/80 text-xs text-slate-700 space-y-1">
+                    ${stepsHtml}
+                </div>
+            `;
+
+            notesContainer.appendChild(wrapper);
+            const inputEl = document.getElementById(`${boxId}-input`);
+            if (inputEl) activeInputElement = inputEl;
+        }
+
+        function evaluateSingleMathBox(boxId) {
+            const inputEl = document.getElementById(`${boxId}-input`);
+            const outputEl = document.getElementById(`${boxId}-output`);
+            const stepsEl = document.getElementById(`${boxId}-steps`);
+            if (!inputEl || !outputEl) return;
+
+            const res = evaluateCasExpression(inputEl.value);
+            outputEl.textContent = res.output;
+            stepsEl.innerHTML = res.steps.map(s => `<div>• ${s}</div>`).join('');
+        }
+
+        function evaluateAllMathBoxes() {
+            const inputs = document.querySelectorAll('.notes-math-input');
+            inputs.forEach(inp => {
+                const boxId = inp.id.replace('-input', '');
+                evaluateSingleMathBox(boxId);
+            });
+        }
+
+        // Ctrl+M shortcut to insert a Math-Box in Notes
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'm') {
+                e.preventDefault();
+                if (currentTab !== 'notes') switchTab('notes');
+                addNotesMathBox('');
+            }
+        });
+
+        /***********************************************************************
+         * 8. VIEW 3: GRAPHS & AUTOMATIC CURVE ANALYSIS (Kurvendiskussion)
+         ***********************************************************************/
+        const graphCanvas = document.getElementById('graph-canvas');
+        const graphCtx = graphCanvas.getContext('2d');
+        let graphRange = { xMin: -10, xMax: 16, yMin: -8, yMax: 48 };
+        let isDraggingGraph = false;
+        let dragStartPixel = { x: 0, y: 0 };
+        let dragStartRange = { xMin: -10, xMax: 16, yMin: -8, yMax: 48 };
+
+        function syncFunctionInputs() {
+            const f1In = document.getElementById('graph-f1-input');
+            const f2In = document.getElementById('graph-f2-input');
+            if (f1In && casMemory.functions.f1 !== undefined) f1In.value = casMemory.functions.f1;
+            if (f2In && casMemory.functions.f2 !== undefined) f2In.value = casMemory.functions.f2;
+        }
+
+        function updateGraphFromUI(shouldAutoFit = false) {
+            const f1In = document.getElementById('graph-f1-input').value.trim().replace(/,/g, '.');
+            const f2In = document.getElementById('graph-f2-input').value.trim().replace(/,/g, '.');
+            document.getElementById('graph-f1-input').value = f1In;
+            document.getElementById('graph-f2-input').value = f2In;
+            casMemory.functions.f1 = f1In || '0';
+            casMemory.functions.f2 = f2In || '';
+            updateGlobalVarBadge();
+            if (shouldAutoFit) {
+                autoFitGraph();
+            } else {
+                drawGraph();
+            }
+            updateCurveAnalysis();
+            saveSimulatorState();
+        }
+
+        function resetGraphZoom() {
+            graphRange = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 };
+            drawGraph();
+        }
+
+        function zoomGraph(factor, centerX = null, centerY = null) {
+            const cx = centerX !== null ? centerX : (graphRange.xMin + graphRange.xMax) / 2;
+            const cy = centerY !== null ? centerY : (graphRange.yMin + graphRange.yMax) / 2;
+            const halfW = ((graphRange.xMax - graphRange.xMin) / 2) * factor;
+            const halfH = ((graphRange.yMax - graphRange.yMin) / 2) * factor;
+            if (halfW < 1e-4 || halfW > 1e6) return;
+            graphRange = {
+                xMin: cx - halfW,
+                xMax: cx + halfW,
+                yMin: cy - halfH,
+                yMax: cy + halfH
+            };
+            drawGraph();
+        }
+
+        function centerGraphOnPoint(x, y) {
+            const spanX = Math.max(16, Math.abs(x) * 2.4);
+            const spanY = Math.max(16, Math.abs(y) * 2.4);
+            graphRange = {
+                xMin: Math.min(-4, x - spanX / 2),
+                xMax: Math.max(4, x + spanX / 2),
+                yMin: Math.min(-4, y - spanY / 2),
+                yMax: Math.max(4, y + spanY / 2)
+            };
+            drawGraph();
+        }
+
+        function evalNumericFunction(exprStr, xVal) {
+            if (!exprStr) return NaN;
+            try {
+                const cleanExpr = exprStr.replace(/,/g, '.');
+                const norm = normalizeCasInput(cleanExpr).replace(/\bx\b/g, `(${xVal})`);
+                if (typeof math !== 'undefined') {
+                    return Number(math.evaluate(norm));
+                }
+                const res = evalSymbolicAST(norm);
+                return res.num.getConstantFrac().toDecimal() / res.den.getConstantFrac().toDecimal();
+            } catch (e) {
+                return NaN;
+            }
+        }
+
+        // Compute exact or numerical solutions for eqLeft = eqRight
+        function findEquationRoots(lhsStr, rhsStr) {
+            const roots = [];
+            try {
+                const normL = normalizeCasInput(lhsStr.replace(/,/g, '.'));
+                const normR = normalizeCasInput(rhsStr.replace(/,/g, '.'));
+                const diffPoly = evalSymbolicAST(normL).num.sub(evalSymbolicAST(normR).num);
+
+                let c0 = 0, c1 = 0, c2 = 0;
+                diffPoly.terms.forEach(t => {
+                    const exp = t.vars['x'] || 0;
+                    const val = t.coeff.toDecimal();
+                    if (exp === 0) c0 += val;
+                    else if (exp === 1) c1 += val;
+                    else if (exp === 2) c2 += val;
+                });
+
+                if (Math.abs(c2) < 1e-12 && Math.abs(c1) > 1e-12) {
+                    roots.push(-c0 / c1);
+                } else if (Math.abs(c2) >= 1e-12) {
+                    const disc = c1 * c1 - 4 * c2 * c0;
+                    if (Math.abs(disc) <= 1e-12) {
+                        roots.push(-c1 / (2 * c2));
+                    } else if (disc > 0) {
+                        roots.push((-c1 - Math.sqrt(disc)) / (2 * c2));
+                        roots.push((-c1 + Math.sqrt(disc)) / (2 * c2));
+                    }
+                }
+            } catch (e) {}
+            return roots.filter(r => isFinite(r));
+        }
+
+        // Smart Auto-Fit so intersections, zeros and y-intercepts are always visible
+        function autoFitGraph() {
+            const pts = [{ x: 0, y: 0 }];
+            const f1 = casMemory.functions.f1;
+            const f2 = casMemory.functions.f2;
+
+            if (f1) {
+                const y0 = evalNumericFunction(f1, 0);
+                if (isFinite(y0) && Math.abs(y0) < 1e4) pts.push({ x: 0, y: y0 });
+                findEquationRoots(f1, '0').forEach(r => {
+                    if (Math.abs(r) < 1e4) pts.push({ x: r, y: 0 });
+                });
+            }
+            if (f2) {
+                const y0 = evalNumericFunction(f2, 0);
+                if (isFinite(y0) && Math.abs(y0) < 1e4) pts.push({ x: 0, y: y0 });
+                findEquationRoots(f2, '0').forEach(r => {
+                    if (Math.abs(r) < 1e4) pts.push({ x: r, y: 0 });
+                });
+            }
+            if (f1 && f2) {
+                findEquationRoots(f1, f2).forEach(ix => {
+                    const iy = evalNumericFunction(f1, ix);
+                    if (isFinite(iy) && Math.abs(ix) < 1e4 && Math.abs(iy) < 1e4) {
+                        pts.push({ x: ix, y: iy });
+                    }
+                });
+            }
+
+            let minX = -5, maxX = 5, minY = -5, maxY = 5;
+            pts.forEach(p => {
+                if (p.x < minX) minX = p.x;
+                if (p.x > maxX) maxX = p.x;
+                if (p.y < minY) minY = p.y;
+                if (p.y > maxY) maxY = p.y;
+            });
+
+            const padX = Math.max(4, (maxX - minX) * 0.28);
+            const padY = Math.max(4, (maxY - minY) * 0.28);
+
+            graphRange = {
+                xMin: Math.floor(minX - padX),
+                xMax: Math.ceil(maxX + padX),
+                yMin: Math.floor(minY - padY),
+                yMax: Math.ceil(maxY + padY)
+            };
+            drawGraph();
+        }
+
+        function getNiceTickStep(span) {
+            if (!isFinite(span) || span <= 0) return 1;
+            const raw = span / 10;
+            const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+            const norm = raw / mag;
+            if (norm > 5) return 10 * mag;
+            if (norm > 2) return 5 * mag;
+            if (norm > 1) return 2 * mag;
+            return mag;
+        }
+
+        function drawGraph(hoverX = null) {
+            const wrapper = document.getElementById('graph-canvas-wrapper');
+            if (!wrapper) return;
+            const rect = wrapper.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
+
+            graphCanvas.width = rect.width;
+            graphCanvas.height = rect.height;
+
+            const w = graphCanvas.width;
+            const h = graphCanvas.height;
+            const { xMin, xMax, yMin, yMax } = graphRange;
+
+            const toPxX = (x) => ((x - xMin) / (xMax - xMin)) * w;
+            const toPxY = (y) => h - ((y - yMin) / (yMax - yMin)) * h;
+            const toMathX = (px) => xMin + (px / w) * (xMax - xMin);
+
+            graphCtx.clearRect(0, 0, w, h);
+
+            const stepX = getNiceTickStep(xMax - xMin);
+            const stepY = getNiceTickStep(yMax - yMin);
+
+            // 1. Grid lines with adaptive spacing
+            graphCtx.strokeStyle = '#e2e8f0';
+            graphCtx.lineWidth = 1;
+            const firstX = Math.ceil(xMin / stepX) * stepX;
+            for (let gx = firstX; gx <= xMax; gx += stepX) {
+                const px = toPxX(gx);
+                graphCtx.beginPath();
+                graphCtx.moveTo(px, 0);
+                graphCtx.lineTo(px, h);
+                graphCtx.stroke();
+            }
+            const firstY = Math.ceil(yMin / stepY) * stepY;
+            for (let gy = firstY; gy <= yMax; gy += stepY) {
+                const py = toPxY(gy);
+                graphCtx.beginPath();
+                graphCtx.moveTo(0, py);
+                graphCtx.lineTo(w, py);
+                graphCtx.stroke();
+            }
+
+            // 2. Axes
+            const zeroX = toPxX(0);
+            const zeroY = toPxY(0);
+            graphCtx.strokeStyle = '#475569';
+            graphCtx.lineWidth = 2;
+            graphCtx.beginPath();
+            graphCtx.moveTo(0, zeroY);
+            graphCtx.lineTo(w, zeroY);
+            graphCtx.moveTo(zeroX, 0);
+            graphCtx.lineTo(zeroX, h);
+            graphCtx.stroke();
+
+            // Axis Numbers (clamped to screen edges if axis is off-screen)
+            const labelYPos = Math.min(h - 6, Math.max(16, zeroY + 15));
+            const labelXPos = Math.min(w - 36, Math.max(6, zeroX + 6));
+            graphCtx.fillStyle = '#475569';
+            graphCtx.font = '11px JetBrains Mono';
+            for (let gx = firstX; gx <= xMax; gx += stepX) {
+                if (Math.abs(gx) < 1e-9) continue;
+                const cleanVal = Number(gx.toFixed(4));
+                graphCtx.fillText(cleanVal, toPxX(gx) - 8, labelYPos);
+            }
+            for (let gy = firstY; gy <= yMax; gy += stepY) {
+                if (Math.abs(gy) < 1e-9) continue;
+                const cleanVal = Number(gy.toFixed(4));
+                graphCtx.fillText(cleanVal, labelXPos, toPxY(gy) + 4);
+            }
+
+            // 3. Plot f2(x) if non-empty
+            if (casMemory.functions.f2) {
+                plotSingleCurve(casMemory.functions.f2, '#e11d48', 2.5, toMathX, toPxY, w);
+            }
+
+            // 4. Plot f1(x)
+            if (casMemory.functions.f1) {
+                plotSingleCurve(casMemory.functions.f1, '#0284c7', 3, toMathX, toPxY, w);
+            }
+
+            // 5. Highlight Intersection Point(s) f1(x) = f2(x) directly on the Graph!
+            if (casMemory.functions.f1 && casMemory.functions.f2) {
+                const interRoots = findEquationRoots(casMemory.functions.f1, casMemory.functions.f2);
+                interRoots.forEach(ix => {
+                    const iy = evalNumericFunction(casMemory.functions.f1, ix);
+                    if (isFinite(iy)) {
+                        const px = toPxX(ix);
+                        const py = toPxY(iy);
+                        if (px >= -20 && px <= w + 20 && py >= -20 && py <= h + 20) {
+                            // Dashed helper lines to axes
+                            graphCtx.save();
+                            graphCtx.setLineDash([4, 4]);
+                            graphCtx.strokeStyle = '#059669';
+                            graphCtx.lineWidth = 1.5;
+                            graphCtx.beginPath();
+                            graphCtx.moveTo(px, zeroY);
+                            graphCtx.lineTo(px, py);
+                            graphCtx.lineTo(zeroX, py);
+                            graphCtx.stroke();
+                            graphCtx.restore();
+
+                            // Glowing Intersection Circle
+                            graphCtx.fillStyle = '#10b981';
+                            graphCtx.beginPath();
+                            graphCtx.arc(px, py, 6.5, 0, Math.PI * 2);
+                            graphCtx.fill();
+                            graphCtx.strokeStyle = '#ffffff';
+                            graphCtx.lineWidth = 2;
+                            graphCtx.stroke();
+
+                            // Label Box for Intersection S(x | y)
+                            const lbl = `S(${Number(ix.toFixed(3))} | ${Number(iy.toFixed(3))})`;
+                            graphCtx.font = 'bold 12px JetBrains Mono';
+                            const textW = graphCtx.measureText(lbl).width + 14;
+                            const boxX = Math.min(w - textW - 8, Math.max(8, px + 10));
+                            const boxY = Math.max(28, py - 12);
+
+                            graphCtx.fillStyle = '#065f46';
+                            graphCtx.beginPath();
+                            graphCtx.roundRect(boxX, boxY - 18, textW, 24, 6);
+                            graphCtx.fill();
+
+                            graphCtx.fillStyle = '#ffffff';
+                            graphCtx.fillText(lbl, boxX + 7, boxY - 2);
+                        }
+                    }
+                });
+            }
+
+            // 6. Hover Trace Crosshair
+            if (hoverX !== null && !isDraggingGraph) {
+                const y1 = evalNumericFunction(casMemory.functions.f1, hoverX);
+                const y2 = casMemory.functions.f2 ? evalNumericFunction(casMemory.functions.f2, hoverX) : NaN;
+                if (isFinite(y1)) {
+                    const px = toPxX(hoverX);
+                    const py = toPxY(y1);
+                    graphCtx.fillStyle = '#0284c7';
+                    graphCtx.beginPath();
+                    graphCtx.arc(px, py, 5, 0, Math.PI * 2);
+                    graphCtx.fill();
+
+                    const badge = document.getElementById('graph-coords-badge');
+                    if (badge) {
+                        const f2Badge = isFinite(y2) ? ` &nbsp;|&nbsp; <span class="text-rose-600 font-bold">f2(x) = ${y2.toFixed(2)}</span>` : '';
+                        badge.innerHTML = `<strong>Spur:</strong> x = ${hoverX.toFixed(2)} &nbsp;|&nbsp; <span class="text-sky-700 font-bold">f1(x) = ${y1.toFixed(2)}</span>${f2Badge}`;
+                    }
+                }
+            }
+        }
+
+        function plotSingleCurve(exprStr, color, width, toMathX, toPxY, canvasWidth) {
+            graphCtx.strokeStyle = color;
+            graphCtx.lineWidth = width;
+            graphCtx.beginPath();
+            let started = false;
+            for (let px = 0; px <= canvasWidth; px += 2) {
+                const x = toMathX(px);
+                const y = evalNumericFunction(exprStr, x);
+                if (isFinite(y) && Math.abs(y) < 1e6) {
+                    const py = toPxY(y);
+                    if (!started) {
+                        graphCtx.moveTo(px, py);
+                        started = true;
+                    } else {
+                        graphCtx.lineTo(px, py);
+                    }
+                } else {
+                    started = false;
+                }
+            }
+            graphCtx.stroke();
+        }
+
+        // Mouse Dragging (Pan) & Wheel Zoom on Graph Canvas
+        graphCanvas.addEventListener('mousedown', (e) => {
+            isDraggingGraph = true;
+            dragStartPixel = { x: e.clientX, y: e.clientY };
+            dragStartRange = { ...graphRange };
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDraggingGraph = false;
+        });
+
+        graphCanvas.addEventListener('mousemove', (e) => {
+            const rect = graphCanvas.getBoundingClientRect();
+            if (isDraggingGraph) {
+                const dxPx = e.clientX - dragStartPixel.x;
+                const dyPx = e.clientY - dragStartPixel.y;
+                const spanX = dragStartRange.xMax - dragStartRange.xMin;
+                const spanY = dragStartRange.yMax - dragStartRange.yMin;
+                const shiftX = -(dxPx / graphCanvas.width) * spanX;
+                const shiftY = (dyPx / graphCanvas.height) * spanY;
+                graphRange = {
+                    xMin: dragStartRange.xMin + shiftX,
+                    xMax: dragStartRange.xMax + shiftX,
+                    yMin: dragStartRange.yMin + shiftY,
+                    yMax: dragStartRange.yMax + shiftY
+                };
+                drawGraph();
+                return;
+            }
+            const px = e.clientX - rect.left;
+            const x = graphRange.xMin + (px / graphCanvas.width) * (graphRange.xMax - graphRange.xMin);
+            drawGraph(x);
+        });
+
+        graphCanvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = graphCanvas.getBoundingClientRect();
+            const px = e.clientX - rect.left;
+            const py = e.clientY - rect.top;
+            const mouseMathX = graphRange.xMin + (px / graphCanvas.width) * (graphRange.xMax - graphRange.xMin);
+            const mouseMathY = graphRange.yMax - (py / graphCanvas.height) * (graphRange.yMax - graphRange.yMin);
+            const factor = e.deltaY < 0 ? 0.82 : 1.22;
+            zoomGraph(factor, mouseMathX, mouseMathY);
+        }, { passive: false });
+
+        function updateCurveAnalysis() {
+            const container = document.getElementById('graph-analysis-output');
+            if (!container) return;
+            const f1 = casMemory.functions.f1 || '2.4*x + 14';
+            const f2 = casMemory.functions.f2 || '';
+            const norm1 = normalizeCasInput(f1);
+
+            let intersectionHtml = '';
+            if (f2.trim() !== '') {
+                const interRoots = findEquationRoots(f1, f2);
+                const solveRes = solveEquationWithSteps(`${f1} = ${f2}`, 'x');
+                if (interRoots.length > 0) {
+                    const ix = interRoots[0];
+                    const iy = evalNumericFunction(f1, ix);
+                    const ixClean = Number(ix.toFixed(4));
+                    const iyClean = Number(iy.toFixed(4));
+                    const stepsList = solveRes.steps.map(s => `<div class="text-[11px] text-emerald-950">• ${s}</div>`).join('');
+                    intersectionHtml = `
+                        <div class="bg-emerald-50 p-3 rounded-xl border-2 border-emerald-400 shadow-sm space-y-1.5">
+                            <div class="text-emerald-900 font-extrabold flex items-center justify-between">
+                                <span><i class="fa-solid fa-crosshairs mr-1"></i> Schnittpunkt f1(x) = f2(x):</span>
+                                <button onclick="centerGraphOnPoint(${ixClean}, ${iyClean})" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded font-bold">
+                                    Zentrieren
+                                </button>
+                            </div>
+                            <div class="cas-mono font-extrabold text-base text-emerald-800 bg-white px-2.5 py-1.5 rounded border border-emerald-200">
+                                S( ${ixClean} | ${iyClean} )
+                            </div>
+                            <div class="text-[11px] text-emerald-900 font-semibold">
+                                ⇒ x = ${ixClean} &nbsp;und&nbsp; y = ${iyClean}
+                            </div>
+                            <div class="pt-1 border-t border-emerald-200 space-y-1">
+                                <div class="font-bold text-[11px] text-emerald-900">Rechenweg (Gleichsetzen):</div>
+                                ${stepsList}
+                                <div class="text-[11px] text-emerald-950">• <strong>y-Wert berechnen:</strong> <code>f1(${ixClean}) = ${iyClean}</code></div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    intersectionHtml = `
+                        <div class="bg-amber-50 p-2.5 rounded-lg border border-amber-300 text-amber-900">
+                            <div class="font-bold">Schnittpunkt f1(x) = f2(x):</div>
+                            <div class="cas-mono mt-0.5">Kein Schnittpunkt (parallel oder nicht schneidend)</div>
+                        </div>
+                    `;
+                }
+            }
+
+            let expanded = f1;
+            let zeros1 = '';
+            let zeros2 = '';
+
+            try {
+                expanded = evaluateCasExpression(`expand(${norm1})`).output;
+                zeros1 = solveEquationWithSteps(`${norm1} = 0`, 'x').output;
+                if (f2) zeros2 = solveEquationWithSteps(`${normalizeCasInput(f2)} = 0`, 'x').output;
+            } catch (e) {}
+
+            const yInt1 = evalNumericFunction(f1, 0);
+            const yInt2 = f2 ? evalNumericFunction(f2, 0) : NaN;
+
+            container.innerHTML = `
+                ${intersectionHtml}
+                <div class="bg-white p-2.5 rounded-lg border border-sky-200">
+                    <div class="text-sky-700 font-bold">Blauer Graph: f1(x) = ${escapeHtml(f1)}</div>
+                    <div class="cas-mono text-slate-700 mt-1">Nullstelle (y=0): <strong>${escapeHtml(zeros1)}</strong></div>
+                    <div class="cas-mono text-slate-700 mt-0.5">Y-Achse (x=0): <strong>P(0 | ${isFinite(yInt1) ? Number(yInt1.toFixed(4)) : '?'})</strong></div>
+                </div>
+                ${f2 ? `
+                <div class="bg-white p-2.5 rounded-lg border border-rose-200">
+                    <div class="text-rose-700 font-bold">Roter Graph: f2(x) = ${escapeHtml(f2)}</div>
+                    <div class="cas-mono text-slate-700 mt-1">Nullstelle (y=0): <strong>${escapeHtml(zeros2)}</strong></div>
+                    <div class="cas-mono text-slate-700 mt-0.5">Y-Achse (x=0): <strong>P(0 | ${isFinite(yInt2) ? Number(yInt2.toFixed(4)) : '?'})</strong></div>
+                </div>
+                ` : ''}
+            `;
+        }
+
+        window.addEventListener('resize', () => {
+            if (currentTab === 'graphs') drawGraph();
+        });
+
+        /***********************************************************************
+         * 9. VIEW 4: LISTS & SPREADSHEET (VALUE TABLE)
+         ***********************************************************************/
+        function renderSpreadsheet() {
+            const tbody = document.getElementById('spreadsheet-body');
+            if (!tbody) return;
+
+            const startX = parseFloat(document.getElementById('table-start-x').value) || -5;
+            const stepX = parseFloat(document.getElementById('table-step-x').value) || 1;
+
+            tbody.innerHTML = '';
+            for (let i = 0; i <= 12; i++) {
+                const x = startX + i * stepX;
+                const y1 = evalNumericFunction(casMemory.functions.f1, x);
+                const y2 = evalNumericFunction(casMemory.functions.f2, x);
+                const diff = (isFinite(y1) && isFinite(y2)) ? (y1 - y2) : NaN;
+
+                const isZero = Math.abs(y1) < 1e-9;
+
+                const tr = document.createElement('tr');
+                tr.className = isZero ? 'bg-emerald-50 font-bold' : 'hover:bg-slate-50 border-b border-slate-200';
+                tr.innerHTML = `
+                    <td class="border border-slate-300 px-3 py-1.5 text-center bg-slate-100 text-slate-500">${i + 1}</td>
+                    <td class="border border-slate-300 px-4 py-1.5 font-semibold">${x}</td>
+                    <td class="border border-slate-300 px-4 py-1.5 text-sky-800">${isFinite(y1) ? Number(y1.toFixed(4)) : 'undef'} ${isZero ? '<span class="ml-2 text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded">Nullstelle</span>' : ''}</td>
+                    <td class="border border-slate-300 px-4 py-1.5 text-rose-800">${isFinite(y2) ? Number(y2.toFixed(4)) : '—'}</td>
+                    <td class="border border-slate-300 px-4 py-1.5 text-emerald-800">${isFinite(diff) ? Number(diff.toFixed(4)) : '—'}</td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        /***********************************************************************
+         * 10. NAVIGATION, KEYPAD & GLOBAL MODALS
+         ***********************************************************************/
+        function switchTab(tabName) {
+            currentTab = tabName;
+            const tabs = ['home', 'calc', 'notes', 'graphs', 'lists'];
+            tabs.forEach(t => {
+                const viewEl = document.getElementById(`view-${t}`);
+                const tabBtn = document.getElementById(`tab-${t}`);
+                if (viewEl) {
+                    if (t === tabName) {
+                        viewEl.classList.remove('hidden');
+                    } else {
+                        viewEl.classList.add('hidden');
+                    }
+                }
+                if (tabBtn) {
+                    if (t === tabName) {
+                        tabBtn.className = 'px-3 py-1.5 rounded-t-lg text-xs font-bold flex items-center gap-1.5 transition bg-slate-950 text-white border-t-2 border-blue-500';
+                    } else {
+                        tabBtn.className = 'px-3 py-1.5 rounded-t-lg text-xs font-bold flex items-center gap-1.5 transition bg-slate-700/60 hover:bg-slate-700 text-slate-300';
+                    }
+                }
+            });
+
+            if (tabName === 'calc') {
+                setTimeout(() => calcInput.focus(), 50);
+            } else if (tabName === 'graphs') {
+                syncFunctionInputs();
+                setTimeout(() => {
+                    drawGraph();
+                    updateCurveAnalysis();
+                }, 50);
+            } else if (tabName === 'lists') {
+                renderSpreadsheet();
+            }
+            saveSimulatorState();
+        }
+
+        function keypadInsert(prefix, suffix) {
+            if (currentTab === 'home') {
+                switchTab('calc');
+            }
+            insertAtCursor(prefix, suffix);
+        }
+
+        function keypadBackspace() {
+            const target = activeInputElement || calcInput;
+            if (!target) return;
+            const start = target.selectionStart || 0;
+            const end = target.selectionEnd || 0;
+            if (start !== end) {
+                target.value = target.value.substring(0, start) + target.value.substring(end);
+                target.selectionStart = target.selectionEnd = start;
+            } else if (start > 0) {
+                target.value = target.value.substring(0, start - 1) + target.value.substring(start);
+                target.selectionStart = target.selectionEnd = start - 1;
+            }
+            target.focus();
+        }
+
+        function triggerActiveEnter() {
+            if (currentTab === 'home') {
+                switchTab('calc');
+                return;
+            }
+            if (currentTab === 'calc') {
+                evaluateCalcInput();
+            } else if (currentTab === 'notes') {
+                if (activeInputElement && activeInputElement.id.endsWith('-input')) {
+                    const boxId = activeInputElement.id.replace('-input', '');
+                    evaluateSingleMathBox(boxId);
+                } else {
+                    evaluateAllMathBoxes();
+                }
+            } else if (currentTab === 'graphs') {
+                updateGraphFromUI();
+            } else if (currentTab === 'lists') {
+                renderSpreadsheet();
+            }
+        }
+
+        function toggleKeypad() {
+            const kp = document.getElementById('handheld-keypad');
+            kp.classList.toggle('hidden');
+            if (currentTab === 'graphs') setTimeout(drawGraph, 50);
+        }
+
+        function toggleAngleMode() {
+            casMemory.angleMode = casMemory.angleMode === 'DEG' ? 'RAD' : 'DEG';
+            document.getElementById('angle-mode-btn').textContent = casMemory.angleMode;
+        }
+
+        function updateGlobalVarBadge() {
+            const fnKeys = Object.keys(casMemory.functions).map(k => `${k}(x)`);
+            const varKeys = Object.keys(casMemory.variables);
+            const combined = [...fnKeys, ...varKeys].join(', ');
+            document.getElementById('var-count-label').textContent = combined || 'Leer';
+        }
+
+        function toggleVarModal() {
+            const modal = document.getElementById('var-modal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                const listEl = document.getElementById('var-modal-list');
+                const items = [];
+                Object.entries(casMemory.functions).forEach(([k, v]) => {
+                    if (v) items.push(`<div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-sky-400 font-bold">${k}(x) :=</span><span class="text-white">${escapeHtml(v)}</span></div>`);
+                });
+                Object.entries(casMemory.variables).forEach(([k, v]) => {
+                    items.push(`<div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-amber-400 font-bold">${k} :=</span><span class="text-white">${escapeHtml(v)}</span></div>`);
+                });
+                listEl.innerHTML = items.length ? items.join('') : '<div class="text-slate-500">Noch keine eigenen Variablen definiert.</div>';
+            }
+        }
+
+        function resetAllCasVariables() {
+            casMemory.variables = { k: '3' };
+            casMemory.functions = { f1: '(x - 2)^2 - 4', f2: 'x - 2' };
+            updateGlobalVarBadge();
+            toggleVarModal();
+        }
+
+        function openExamTrainerModal() {
+            document.getElementById('exam-modal').classList.remove('hidden');
+        }
+
+        function closeExamTrainerModal() {
+            document.getElementById('exam-modal').classList.add('hidden');
+        }
+
+        function openGeometryHelper() {
+            switchTab('notes');
+            addNotesTextBlock('Geometrie-Herleitung der 1. Binomischen Formel: Ein Quadrat mit Seitenlänge (a + b) besteht aus zwei kleineren Quadraten (a² und b²) sowie zwei Rechtecken (jeweils a·b):');
+            addNotesMathBox('expand((a + b)^2)');
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function escapeQuotes(str) {
+            return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        // Initialize Simulator on Window Load
+        window.onload = function () {
+            const restored = loadSimulatorState();
+            if (!restored) {
+                loadWorksheetTasks(false);
+                resetNotesToBinomialTemplate();
+                updateGlobalVarBadge();
+            }
+        };
+    </script>
+</body>
+</html>
