@@ -562,40 +562,67 @@
             <!-- =================================================================== -->
             <div id="view-graphs" class="hidden flex-1 flex flex-col bg-white text-slate-900 overflow-hidden">
                 <!-- Function Entry Bar -->
-                <div class="bg-sky-50 border-b border-sky-200 p-3 flex flex-wrap items-center gap-2">
-                    <div class="flex items-center space-x-2 flex-1 min-w-[220px]">
-                        <span class="bg-sky-600 text-white cas-mono font-bold px-2.5 py-1.5 rounded text-sm">f1(x) =</span>
-                        <input id="graph-f1-input" type="text" value="2.4*x + 14"
-                            onkeydown="if(event.key==='Enter') updateGraphFromUI(true)"
-                            class="flex-1 bg-white border-2 border-sky-400 rounded-lg px-3 py-1.5 cas-mono text-sm text-slate-900 outline-none focus:border-sky-600"
-                            placeholder="z.B. 2.4*x + 14">
+                <div class="bg-sky-50 border-b border-sky-200 p-3 space-y-2.5">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="flex items-center space-x-2 flex-1 min-w-[220px]">
+                            <span class="bg-sky-600 text-white cas-mono font-bold px-2.5 py-1.5 rounded text-sm">f1(x) =</span>
+                            <input id="graph-f1-input" type="text" value="2.4*x + 14"
+                                onkeydown="if(event.key==='Enter') updateGraphFromUI(true)"
+                                class="flex-1 bg-white border-2 border-sky-400 rounded-lg px-3 py-1.5 cas-mono text-sm text-slate-900 outline-none focus:border-sky-600"
+                                placeholder="z.B. 2.4*x + 14">
+                        </div>
+
+                        <div class="flex items-center space-x-2 flex-1 min-w-[220px]">
+                            <span class="bg-rose-600 text-white cas-mono font-bold px-2.5 py-1.5 rounded text-sm">f2(x) =</span>
+                            <input id="graph-f2-input" type="text" value="3.2*x + 6"
+                                onkeydown="if(event.key==='Enter') updateGraphFromUI(true)"
+                                class="flex-1 bg-white border-2 border-rose-300 rounded-lg px-3 py-1.5 cas-mono text-sm text-slate-900 outline-none focus:border-rose-500"
+                                placeholder="Optional: 2. Funktion">
+                        </div>
+
+                        <button onclick="updateGraphFromUI(true)" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs sm:text-sm shadow transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Zeichnen & Auto-Zoom ↵
+                        </button>
+
+                        <div class="flex items-center space-x-1">
+                            <button onclick="zoomGraph(0.75)" class="bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold px-2.5 py-1.5 rounded-lg text-xs shadow-sm transition" title="Reinzoomen (+)">
+                                <i class="fa-solid fa-magnifying-glass-plus"></i> +
+                            </button>
+                            <button onclick="zoomGraph(1.35)" class="bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold px-2.5 py-1.5 rounded-lg text-xs shadow-sm transition" title="Rauszoomen (-)">
+                                <i class="fa-solid fa-magnifying-glass-minus"></i> −
+                            </button>
+                            <button onclick="autoFitGraph()" class="bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 font-bold px-2.5 py-1.5 rounded-lg text-xs shadow-sm transition" title="Fenster automatisch an Schnittpunkt & Achsen anpassen">
+                                <i class="fa-solid fa-crosshairs"></i> Schnittpunkt-Fokus
+                            </button>
+                            <button onclick="resetGraphZoom()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg text-xs transition" title="Standard-Ansicht (-10 bis 10)">
+                                Standard
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="flex items-center space-x-2 flex-1 min-w-[220px]">
-                        <span class="bg-rose-600 text-white cas-mono font-bold px-2.5 py-1.5 rounded text-sm">f2(x) =</span>
-                        <input id="graph-f2-input" type="text" value="3.2*x + 6"
-                            onkeydown="if(event.key==='Enter') updateGraphFromUI(true)"
-                            class="flex-1 bg-white border-2 border-rose-300 rounded-lg px-3 py-1.5 cas-mono text-sm text-slate-900 outline-none focus:border-rose-500"
-                            placeholder="Optional: 2. Funktion">
-                    </div>
+                    <!-- NEW: Direct x-Value Evaluator Bar (Spurwert / Funktionswerte für x bestimmen) -->
+                    <div class="bg-indigo-50/90 border border-indigo-200 rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs shadow-sm">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="bg-indigo-600 text-white font-bold px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                                <i class="fa-solid fa-bullseye"></i> x-Wert bestimmen:
+                            </span>
+                            <div class="flex items-center bg-white border-2 border-indigo-400 focus-within:border-indigo-600 rounded-lg overflow-hidden shadow-inner">
+                                <span class="px-2.5 py-1 bg-indigo-100 text-indigo-900 cas-mono font-bold">x =</span>
+                                <input id="graph-probe-x" type="text" value="5"
+                                    oninput="evaluateGraphProbeX(false)"
+                                    onkeydown="if(event.key==='Enter') evaluateGraphProbeX(true)"
+                                    class="w-24 px-2.5 py-1 cas-mono font-bold text-sm text-slate-900 outline-none"
+                                    placeholder="z.B. 5">
+                            </div>
+                            <button onclick="evaluateGraphProbeX(true)" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm transition">
+                                Wert zeigen ↵
+                            </button>
+                        </div>
 
-                    <button onclick="updateGraphFromUI(true)" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs sm:text-sm shadow transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Zeichnen & Auto-Zoom ↵
-                    </button>
-
-                    <div class="flex items-center space-x-1">
-                        <button onclick="zoomGraph(0.75)" class="bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold px-2.5 py-1.5 rounded-lg text-xs shadow-sm transition" title="Reinzoomen (+)">
-                            <i class="fa-solid fa-magnifying-glass-plus"></i> +
-                        </button>
-                        <button onclick="zoomGraph(1.35)" class="bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold px-2.5 py-1.5 rounded-lg text-xs shadow-sm transition" title="Rauszoomen (-)">
-                            <i class="fa-solid fa-magnifying-glass-minus"></i> −
-                        </button>
-                        <button onclick="autoFitGraph()" class="bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 font-bold px-2.5 py-1.5 rounded-lg text-xs shadow-sm transition" title="Fenster automatisch an Schnittpunkt & Achsen anpassen">
-                            <i class="fa-solid fa-crosshairs"></i> Schnittpunkt-Fokus
-                        </button>
-                        <button onclick="resetGraphZoom()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg text-xs transition" title="Standard-Ansicht (-10 bis 10)">
-                            Standard
-                        </button>
+                        <!-- Live Calculated y-Values for f1(x) and f2(x) -->
+                        <div id="graph-probe-results-bar" class="flex flex-wrap items-center gap-2 cas-mono text-xs sm:text-sm">
+                            <!-- Populated dynamically -->
+                        </div>
                     </div>
                 </div>
 
@@ -908,6 +935,7 @@
          ***********************************************************************/
         const casMemory = {
             angleMode: 'DEG',
+            probeX: '5',
             variables: {
                 k: '3'
             },
@@ -988,6 +1016,7 @@
 
                 if (state.casMemory) {
                     casMemory.angleMode = state.casMemory.angleMode || 'DEG';
+                    casMemory.probeX = state.casMemory.probeX !== undefined ? state.casMemory.probeX : '5';
                     casMemory.variables = state.casMemory.variables || { k: '3' };
                     casMemory.functions = state.casMemory.functions || { f1: '2.4*x + 14', f2: '3.2*x + 6' };
                 }
@@ -2427,18 +2456,88 @@
         function syncFunctionInputs() {
             const f1In = document.getElementById('graph-f1-input');
             const f2In = document.getElementById('graph-f2-input');
+            const probeIn = document.getElementById('graph-probe-x');
             if (f1In && casMemory.functions.f1 !== undefined) f1In.value = casMemory.functions.f1;
             if (f2In && casMemory.functions.f2 !== undefined) f2In.value = casMemory.functions.f2;
+            if (probeIn && casMemory.probeX !== undefined) probeIn.value = casMemory.probeX;
+        }
+
+        function getParsedProbeX() {
+            const raw = (casMemory.probeX !== undefined ? String(casMemory.probeX) : '').trim().replace(/,/g, '.');
+            if (!raw) return NaN;
+            return evalNumericFunction(raw, 0);
+        }
+
+        function evaluateGraphProbeX(focusOnPoint = false) {
+            const probeIn = document.getElementById('graph-probe-x');
+            if (!probeIn) return;
+            casMemory.probeX = probeIn.value.trim();
+            const xVal = getParsedProbeX();
+
+            if (focusOnPoint && isFinite(xVal)) {
+                // Ensure the chosen x value and its y values are visible inside graphRange
+                const y1 = evalNumericFunction(casMemory.functions.f1, xVal);
+                const y2 = casMemory.functions.f2 ? evalNumericFunction(casMemory.functions.f2, xVal) : NaN;
+                if (xVal <= graphRange.xMin || xVal >= graphRange.xMax) {
+                    const halfW = (graphRange.xMax - graphRange.xMin) / 2;
+                    graphRange.xMin = xVal - halfW;
+                    graphRange.xMax = xVal + halfW;
+                }
+                const targetY = isFinite(y1) ? y1 : (isFinite(y2) ? y2 : 0);
+                if (targetY <= graphRange.yMin || targetY >= graphRange.yMax) {
+                    const halfH = (graphRange.yMax - graphRange.yMin) / 2;
+                    graphRange.yMin = targetY - halfH;
+                    graphRange.yMax = targetY + halfH;
+                }
+            }
+
+            updateProbeResultsBar();
+            drawGraph();
+            updateCurveAnalysis();
+            saveSimulatorState();
+        }
+
+        function updateProbeResultsBar() {
+            const bar = document.getElementById('graph-probe-results-bar');
+            if (!bar) return;
+            const xVal = getParsedProbeX();
+            if (!isFinite(xVal)) {
+                bar.innerHTML = `<span class="text-slate-500 italic">Zahl für x eingeben (z.B. 5)...</span>`;
+                return;
+            }
+            const xClean = Number(xVal.toFixed(4));
+            const f1 = casMemory.functions.f1;
+            const f2 = casMemory.functions.f2;
+            const y1 = evalNumericFunction(f1, xVal);
+            const y2 = f2 ? evalNumericFunction(f2, xVal) : NaN;
+
+            let html = '';
+            if (isFinite(y1)) {
+                const y1Clean = Number(y1.toFixed(4));
+                html += `<span class="bg-sky-100 border border-sky-300 text-sky-900 font-extrabold px-2.5 py-1 rounded-lg shadow-sm">
+                    f1(${xClean}) = ${y1Clean} &nbsp;<span class="text-sky-600 font-normal">→ P₁(${xClean} | ${y1Clean})</span>
+                </span>`;
+            }
+            if (f2 && isFinite(y2)) {
+                const y2Clean = Number(y2.toFixed(4));
+                html += `<span class="bg-rose-100 border border-rose-300 text-rose-900 font-extrabold px-2.5 py-1 rounded-lg shadow-sm">
+                    f2(${xClean}) = ${y2Clean} &nbsp;<span class="text-rose-600 font-normal">→ P₂(${xClean} | ${y2Clean})</span>
+                </span>`;
+            }
+            bar.innerHTML = html;
         }
 
         function updateGraphFromUI(shouldAutoFit = false) {
             const f1In = document.getElementById('graph-f1-input').value.trim().replace(/,/g, '.');
             const f2In = document.getElementById('graph-f2-input').value.trim().replace(/,/g, '.');
+            const probeIn = document.getElementById('graph-probe-x');
             document.getElementById('graph-f1-input').value = f1In;
             document.getElementById('graph-f2-input').value = f2In;
             casMemory.functions.f1 = f1In || '0';
             casMemory.functions.f2 = f2In || '';
+            if (probeIn) casMemory.probeX = probeIn.value.trim();
             updateGlobalVarBadge();
+            updateProbeResultsBar();
             if (shouldAutoFit) {
                 autoFitGraph();
             } else {
@@ -2554,6 +2653,13 @@
                         pts.push({ x: ix, y: iy });
                     }
                 });
+            }
+            const probeXVal = getParsedProbeX();
+            if (isFinite(probeXVal) && Math.abs(probeXVal) < 1e4) {
+                const py1 = evalNumericFunction(f1, probeXVal);
+                const py2 = f2 ? evalNumericFunction(f2, probeXVal) : NaN;
+                if (isFinite(py1) && Math.abs(py1) < 1e4) pts.push({ x: probeXVal, y: py1 });
+                if (isFinite(py2) && Math.abs(py2) < 1e4) pts.push({ x: probeXVal, y: py2 });
             }
 
             let minX = -5, maxX = 5, minY = -5, maxY = 5;
@@ -2716,6 +2822,78 @@
                 });
             }
 
+            // 5b. Draw Vertical Line & Points for User's Custom x-Value (Spurwert probeX)
+            const probeXVal = getParsedProbeX();
+            if (isFinite(probeXVal)) {
+                const px = toPxX(probeXVal);
+                const xClean = Number(probeXVal.toFixed(3));
+                if (px >= -20 && px <= w + 20) {
+                    graphCtx.save();
+                    graphCtx.setLineDash([6, 4]);
+                    graphCtx.strokeStyle = '#6366f1';
+                    graphCtx.lineWidth = 1.8;
+                    graphCtx.beginPath();
+                    graphCtx.moveTo(px, 0);
+                    graphCtx.lineTo(px, h);
+                    graphCtx.stroke();
+                    graphCtx.restore();
+
+                    // Draw P1 on f1(x)
+                    const py1Val = evalNumericFunction(casMemory.functions.f1, probeXVal);
+                    if (isFinite(py1Val)) {
+                        const py1 = toPxY(py1Val);
+                        const y1Clean = Number(py1Val.toFixed(3));
+                        graphCtx.fillStyle = '#0284c7';
+                        graphCtx.beginPath();
+                        graphCtx.arc(px, py1, 6, 0, Math.PI * 2);
+                        graphCtx.fill();
+                        graphCtx.strokeStyle = '#ffffff';
+                        graphCtx.lineWidth = 2;
+                        graphCtx.stroke();
+
+                        const lbl1 = `f1(${xClean}) = ${y1Clean}`;
+                        graphCtx.font = 'bold 11px JetBrains Mono';
+                        const tw1 = graphCtx.measureText(lbl1).width + 12;
+                        const bx1 = Math.min(w - tw1 - 6, Math.max(6, px + 8));
+                        const by1 = Math.min(h - 8, Math.max(24, py1 - 8));
+                        graphCtx.fillStyle = '#0369a1';
+                        graphCtx.beginPath();
+                        graphCtx.roundRect(bx1, by1 - 16, tw1, 20, 5);
+                        graphCtx.fill();
+                        graphCtx.fillStyle = '#ffffff';
+                        graphCtx.fillText(lbl1, bx1 + 6, by1 - 2);
+                    }
+
+                    // Draw P2 on f2(x)
+                    if (casMemory.functions.f2) {
+                        const py2Val = evalNumericFunction(casMemory.functions.f2, probeXVal);
+                        if (isFinite(py2Val)) {
+                            const py2 = toPxY(py2Val);
+                            const y2Clean = Number(py2Val.toFixed(3));
+                            graphCtx.fillStyle = '#e11d48';
+                            graphCtx.beginPath();
+                            graphCtx.arc(px, py2, 6, 0, Math.PI * 2);
+                            graphCtx.fill();
+                            graphCtx.strokeStyle = '#ffffff';
+                            graphCtx.lineWidth = 2;
+                            graphCtx.stroke();
+
+                            const lbl2 = `f2(${xClean}) = ${y2Clean}`;
+                            graphCtx.font = 'bold 11px JetBrains Mono';
+                            const tw2 = graphCtx.measureText(lbl2).width + 12;
+                            const bx2 = Math.min(w - tw2 - 6, Math.max(6, px + 8));
+                            const by2 = Math.min(h - 8, Math.max(24, py2 + 18));
+                            graphCtx.fillStyle = '#be123c';
+                            graphCtx.beginPath();
+                            graphCtx.roundRect(bx2, by2 - 16, tw2, 20, 5);
+                            graphCtx.fill();
+                            graphCtx.fillStyle = '#ffffff';
+                            graphCtx.fillText(lbl2, bx2 + 6, by2 - 2);
+                        }
+                    }
+                }
+            }
+
             // 6. Hover Trace Crosshair
             if (hoverX !== null && !isDraggingGraph) {
                 const y1 = evalNumericFunction(casMemory.functions.f1, hoverX);
@@ -2812,6 +2990,43 @@
             const f2 = casMemory.functions.f2 || '';
             const norm1 = normalizeCasInput(f1);
 
+            let probeHtml = '';
+            const probeXVal = getParsedProbeX();
+            if (isFinite(probeXVal)) {
+                const xClean = Number(probeXVal.toFixed(4));
+                const y1 = evalNumericFunction(f1, probeXVal);
+                const y2 = f2 ? evalNumericFunction(f2, probeXVal) : NaN;
+                const y1Clean = isFinite(y1) ? Number(y1.toFixed(4)) : 'undef';
+                const y2Clean = isFinite(y2) ? Number(y2.toFixed(4)) : '—';
+                const subF1 = f1.replace(/\bx\b/g, `(${xClean})`);
+                const subF2 = f2 ? f2.replace(/\bx\b/g, `(${xClean})`) : '';
+                const diffVal = (isFinite(y1) && isFinite(y2)) ? Number((y1 - y2).toFixed(4)) : null;
+
+                probeHtml = `
+                    <div class="bg-indigo-50 p-3 rounded-xl border-2 border-indigo-400 shadow-sm space-y-1.5">
+                        <div class="text-indigo-950 font-extrabold flex items-center justify-between">
+                            <span><i class="fa-solid fa-bullseye mr-1 text-indigo-600"></i> Werte für x = ${xClean}:</span>
+                            <button onclick="evaluateGraphProbeX(true)" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] px-2 py-0.5 rounded font-bold">
+                                Im Graph zeigen
+                            </button>
+                        </div>
+                        <div class="bg-white p-2 rounded border border-indigo-200 space-y-1 cas-mono text-xs">
+                            <div class="text-sky-800 font-bold">f1(${xClean}) = ${y1Clean}</div>
+                            <div class="text-[11px] text-slate-600">Rechnung: ${escapeHtml(subF1)} = ${y1Clean}</div>
+                            ${f2 ? `
+                            <div class="border-t border-slate-200 pt-1 mt-1 text-rose-800 font-bold">f2(${xClean}) = ${y2Clean}</div>
+                            <div class="text-[11px] text-slate-600">Rechnung: ${escapeHtml(subF2)} = ${y2Clean}</div>
+                            ` : ''}
+                            ${diffVal !== null ? `
+                            <div class="border-t border-slate-200 pt-1 mt-1 text-indigo-900 font-semibold text-[11px]">
+                                Differenz f1(${xClean}) − f2(${xClean}) = ${diffVal}
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
             let intersectionHtml = '';
             if (f2.trim() !== '') {
                 const interRoots = findEquationRoots(f1, f2);
@@ -2867,6 +3082,7 @@
             const yInt2 = f2 ? evalNumericFunction(f2, 0) : NaN;
 
             container.innerHTML = `
+                ${probeHtml}
                 ${intersectionHtml}
                 <div class="bg-white p-2.5 rounded-lg border border-sky-200">
                     <div class="text-sky-700 font-bold">Blauer Graph: f1(x) = ${escapeHtml(f1)}</div>
@@ -2948,6 +3164,7 @@
                 setTimeout(() => calcInput.focus(), 50);
             } else if (tabName === 'graphs') {
                 syncFunctionInputs();
+                updateProbeResultsBar();
                 setTimeout(() => {
                     drawGraph();
                     updateCurveAnalysis();
